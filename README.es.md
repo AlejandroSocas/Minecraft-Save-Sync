@@ -12,6 +12,7 @@ Este script utiliza operaciones de sobrescritura y borrado (`shutil`). Se recomi
 ## Prerrequisitos
 Este programa utiliza únicamente librerías estándar de Python, por lo que no es necesario instalar dependencias externas. Solo necesitas:
 * Python 3.6 o superior.
+* **Tener tu servicio de nube instalado localmente** (ej. la aplicación de escritorio de OneDrive, Google Drive, Dropbox, etc.), ya que el script funciona interactuando con la carpeta de sincronización local que crean estos servicios en tu disco duro.
 
 ## Instalación
 

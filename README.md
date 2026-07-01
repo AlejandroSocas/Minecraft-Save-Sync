@@ -12,6 +12,7 @@ This script uses overwrite and deletion operations (`shutil`). It is highly reco
 ## Prerequisites
 This program exclusively uses standard Python libraries, so no external dependencies are required. You only need:
 * Python 3.6 or higher.
+* **A cloud service installed locally** (e.g., the OneDrive, Google Drive, or Dropbox desktop app), as the script works by interacting with the local sync folder created by these services on your hard drive.
 
 ## Installation
 
