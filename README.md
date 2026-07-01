@@ -60,3 +60,23 @@ Sincronización (Lo haces cada vez que termines de jugar a un mundo )
   ```text
   python mssync.py sync
   ```
+
+### Automatización con Prism Launcher (Opcional)
+
+Puedes configurar Prism Launcher para que sincronice tus mundos automáticamente cada vez que cierres el juego, abriendo una terminal para que puedas ver el proceso.
+
+1. Haz clic derecho en tu instancia de Minecraft y selecciona **Editar instancia**.
+2. Ve a **Configuraciones > Comandos personalizados**.
+3. Marca la casilla para habilitar los comandos.
+4. En el campo **Comando posterior a la ejecución**, pega el comando correspondiente a tu sistema operativo (recuerda cambiar la ruta por la ubicación real de tu script):
+
+**Windows:**
+`start cmd /k "python C:\"ruta"\mssync.py sync"`
+
+**Linux (GNOME):**
+`gnome-terminal -- bash -c "python /"ruta"/mssync.py sync; echo ''; read -p 'Presiona Enter para cerrar...'"`
+
+**Linux (KDE):**
+`konsole -e bash -c "python /"ruta"/mssync.py sync; echo ''; read -p 'Presiona Enter para cerrar...'"`
+
+***¡Recuerda cambiar "ruta" por la ruta real donde instalastes el programa!***

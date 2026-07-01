@@ -4,10 +4,13 @@ import json
 import shutil
 import sys
 
+DIRECTORIO_SCRIPT = Path(__file__).parent
+ARCHIVO_CONFIG = DIRECTORIO_SCRIPT / "config.json"
+
 # Carga la configuración del programa desde el archivo config.json
 def cargar_configuracion():
   try:
-    with open("config.json", "r") as archivo:
+    with open(ARCHIVO_CONFIG, "r") as archivo:
       datos = json.load(archivo)
   except FileNotFoundError:
     print("No se ha encontrado el archivo de configuración")
@@ -40,9 +43,8 @@ def main():
   
   # Cargamos los datos previos si existen
   datos = {}
-  archivo_config = Path("config.json")
-  if archivo_config.exists():
-    with open(archivo_config, "r") as archivo:
+  if ARCHIVO_CONFIG.exists():
+    with open(ARCHIVO_CONFIG, "r") as archivo:
       datos = json.load(archivo)
   
   guardar_json = False
@@ -125,7 +127,7 @@ def main():
   
   # Guardamos la configuración solo si hubo algún cambio
   if guardar_json:
-    with open(archivo_config, "w") as archivo:
+    with open(ARCHIVO_CONFIG, "w") as archivo:
       json.dump(datos, archivo, indent=2)
   
   sys.exit(0)
