@@ -1,106 +1,117 @@
 # Minecraft-Save-Sync
 
-Script de Python por CLI que se encarga de sincronizar los mundos de Minecraft entre una carpeta local y un directorio en la nube. Es teóricamente compatible con Linux, Windows y MacOS, aunque actualmente solo ha sido testeado de forma exhaustiva en entornos Linux.
+🌍 *Read this in other languages: [English](README.md), [Español](README.es.md).*
 
-## Cuidado
-Este script utiliza operaciones de sobrescritura y borrado (`shutil`). Se recomienda encarecidamente **hacer una copia de seguridad manual** de tus mundos antes de usar la herramienta por primera vez, para evitar pérdidas de progreso en caso de configurar las rutas incorrectamente.
+---
 
-## Prerrequisitos
-Este programa utiliza únicamente librerías estándar de Python, por lo que no es necesario instalar dependencias externas. Solo necesitas:
-* Python 3.6 o superior.
+A bilingual (English/Spanish) Python CLI script that synchronizes Minecraft worlds between a local folder and a cloud directory. It is theoretically compatible with Linux, Windows, and macOS, although currently it has only been extensively tested in Linux environments.
 
-## Instalación
+## Warning
+This script uses overwrite and deletion operations (`shutil`). It is highly recommended to **make a manual backup** of your saves before using the tool for the first time to avoid any loss of progress in case of an incorrect path configuration.
 
-Tienes dos opciones para descargar y preparar la herramienta en tu equipo:
+## Prerequisites
+This program exclusively uses standard Python libraries, so no external dependencies are required. You only need:
+* Python 3.6 or higher.
 
-**Opción A: Usando Git (Recomendado)**
-1. Abre tu terminal y clona el repositorio:
+## Installation
+
+You have two options to download and set up the tool on your machine:
+
+**Option A: Using Git (Recommended)**
+1. Open your terminal and clone the repository:
    ```bash
    git clone [https://github.com/AlejandroSocas/Minecraft-Save-Sync.git](https://github.com/AlejandroSocas/Minecraft-Save-Sync.git)
    ```
 
-2. Navega hasta la carpeta recién descargada:
+2. Navigate to the newly downloaded folder:
    ```bash
    cd Minecraft-Save-Sync
    ```
 
-**Opción B: Descarga manual (Sin Git)**
-1. Haz clic en el botón verde "<> Code" en la parte superior derecha de esta página y selecciona "Download ZIP".
-2. Descomprime el archivo descargado en la carpeta donde desees guardar el programa.
-3. Abre una terminal y navega hasta esa carpeta (ej: `cd Descargas/Minecraft-Save-Sync`).
+**Option B: Manual Download (No Git)**
+1. Click the green "<> Code" button at the top right of this page and select "Download ZIP".
+2. Extract the downloaded file into your desired folder.
+3. Open a terminal and navigate to that folder (e.g., `cd Downloads/Minecraft-Save-Sync`).
 
-## Uso general
+## General Usage
 
-En la terminal de tu sistema operativo, dentro de la carpeta donde instalaste el programa:
+In your operating system's terminal, inside the folder where you installed the program:
 
 ```text
-mssync.py [-h] [-slp SETLOCALP] [-scp SETCLOUDP] [-dr] [-bla BLACKLIST_ADD [BLACKLIST_ADD ...]] [-blr BLACKLIST_REMOVE [BLACKLIST_REMOVE ...]] [{sync}]
+mssync.py [-h] [-slp SETLOCALP] [-scp SETCLOUDP] [-dr] [-bla BLACKLIST_ADD [BLACKLIST_ADD ...]] [-blr BLACKLIST_REMOVE [BLACKLIST_REMOVE ...]] [-l {en,es}] [{sync}]
 
 positional arguments:
-  {sync}                Sincroniza los mundos locales y en la nube
+  {sync}                Synchronizes local and cloud worlds
 
 options:
-  -h, --help            Muestra las opciones del programa
+  -h, --help            Shows the program options
   -slp, --setlocalp SETLOCALP
-                        Establece la ruta local de los mundos
+                        Sets the local path for your worlds
   -scp, --setcloudp SETCLOUDP
-                        Establece la ruta de la nube de los mundos
-  -dr, --dry-run        Realiza una simulación de lo que haría la sincronización pero sin modificar archivos
+                        Sets the cloud path for your worlds
+  -dr, --dry-run        Performs a simulation of the synchronization without modifying any files
   -bla, --blacklist-add BLACKLIST_ADD [BLACKLIST_ADD ...]
-                        Agrega uno o más mundos a la lista negra
+                        Adds one or more worlds to the blacklist
   -blr, --blacklist-remove BLACKLIST_REMOVE [BLACKLIST_REMOVE ...]
-                        Elimina uno o más mundos de la lista negra
+                        Removes one or more worlds from the blacklist
+  -l, --lang {en,es}    Sets the language (en/es)
 ```
 
-## Ejemplos de uso
+## Usage Examples
 
-### 1. Configuración inicial
-Establece las rutas de tus mundos. Esto **solo se hace la primera vez** y queda guardado en `config.json`.
+### 1. Initial Configuration
+Set the paths for your worlds. This is **only done the first time** and gets saved in `config.json`.
 ```bash
 python mssync.py --setlocalp /home/user/.minecraft/saves/ --setcloudp /home/user/Onedrive/MCSaves/
 ```
 
-### 2. Sincronización
-Ejecuta este comando cada vez que termines de jugar a un mundo para actualizar la nube.
+### 2. Synchronization
+Run this command every time you finish playing a world to update the cloud.
 ```bash
 python mssync.py sync
 ```
 
-### 3. Simulación (Dry Run)
-Si quieres comprobar qué mundos se subirían, bajarían o sobrescribirían sin realizar ningún cambio real en tus archivos, añade el parámetro `-dr`.
+### 3. Simulation (Dry Run)
+If you want to check which worlds would be uploaded, downloaded, or overwritten without making any actual changes to your files, add the `-dr` parameter.
 ```bash
 python mssync.py sync -dr
 ```
 
-### 4. Gestión de la Lista Negra (Blacklist)
-Si tienes mundos de prueba pesados que no quieres sincronizar con la nube, puedes añadirlos a la lista negra. El programa los ignorará siempre hasta que los elimines de la lista.
+### 4. Blacklist Management
+If you have heavy test worlds that you do not want to sync with the cloud, you can add them to the blacklist. The program will automatically and permanently ignore them during every sync until you remove them from the list.
 
-Añadir mundos:
+Add worlds:
 ```bash
-python mssync.py -bla "Mundo Pruebas" "Mundo Hardcore"
+python mssync.py -bla "Test World" "Hardcore World"
 ```
 
-Quitar mundos:
+Remove worlds:
 ```bash
-python mssync.py -blr "Mundo Pruebas"
+python mssync.py -blr "Test World"
 ```
 
-## Automatización con Prism Launcher (Opcional)
+### 5. Change Language
+The program runs in English by default. You can permanently switch the interface to Spanish with a single command:
+```bash
+python mssync.py -l es
+```
 
-Puedes configurar Prism Launcher para que sincronice tus mundos automáticamente cada vez que cierres el juego, abriendo una terminal para que puedas ver el proceso.
+## Prism Launcher Automation (Optional)
 
-1. Haz clic derecho en tu instancia de Minecraft y selecciona **Editar instancia**.
-2. Ve a **Configuraciones > Comandos personalizados**.
-3. Marca la casilla para habilitar los comandos.
-4. En el campo **Comando posterior a la ejecución**, pega el comando correspondiente a tu sistema operativo:
+You can configure Prism Launcher to automatically sync your worlds every time you close the game, opening a terminal so you can see the process.
+
+1. Right-click your Minecraft instance and select **Edit**.
+2. Go to **Settings > Custom Commands**.
+3. Check the box to enable custom commands.
+4. In the **Post-launch command** field, paste the corresponding command for your operating system:
 
 **Windows:**
-`start cmd /k "python C:\ruta\mssync.py sync"`
+`start cmd /k "python C:\path\to\mssync.py sync"`
 
 **Linux (GNOME):**
-`gnome-terminal -- bash -c "python /ruta/mssync.py sync; echo ''; read -p 'Presiona Enter para cerrar...'"`
+`gnome-terminal -- bash -c "python /path/to/mssync.py sync; echo ''; read -p 'Press Enter to close...'"`
 
 **Linux (KDE):**
-`konsole -e bash -c "python /ruta/mssync.py sync; echo ''; read -p 'Presiona Enter para cerrar...'"`
+`konsole -e bash -c "python /path/to/mssync.py sync; echo ''; read -p 'Press Enter to close...'"`
 
-***¡Recuerda cambiar "ruta" por la ruta absoluta real donde instalaste el programa!***
+***Remember to replace "path/to" with the actual absolute path where you installed the program!***
