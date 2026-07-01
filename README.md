@@ -9,9 +9,32 @@ Este script utiliza operaciones de sobrescritura y borrado (`shutil`). Se recomi
 Este programa utiliza únicamente librerías estándar de Python, por lo que no es necesario instalar dependencias externas. Solo necesitas:
 * Python 3.6 o superior.
 
+## Instalación
+
+Tienes dos opciones para descargar y preparar la herramienta en tu equipo:
+
+**Opción A: Usando Git (Recomendado)**
+1. Abre tu terminal y clona el repositorio:
+  ```bash
+  git clone https://github.com/AlejandroSocas/Minecraft-Save-Sync.git
+  ```
+
+2. Navega hasta la carpeta recién descargada:
+  ```bash
+  cd Minecraft-Save-Sync
+  ```
+
+**Opción B: Descarga manual (Sin Git)**
+
+Haz clic en el botón verde "<> Code" en la parte superior derecha de esta página y selecciona "Download ZIP".
+
+Descomprime el archivo descargado en la carpeta donde desees guardar el programa.
+
+Abre una terminal y navega hasta esa carpeta (ej: cd Descargas/Minecraft-Save-Sync).
+
 ## Uso general
 
-En la terminal de tu sistema operativo:
+En la terminal de tu sistema operativo dentro de la carpeta donde instalastes el programa:
 
 ```text
 mssync.py [-h] [-slp SETLOCALP] [-scp SETCLOUDP] [{sync}]
