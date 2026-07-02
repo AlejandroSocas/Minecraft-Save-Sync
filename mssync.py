@@ -45,7 +45,8 @@ TEXTOS = {
     "corrupt_warning": "Warning: The world {} seems to be corrupted or is missing level.dat",
     "saving_local": "Saving new local path: {}",
     "saving_cloud": "Saving new cloud path: {}",
-    "saving_lang": "Language set to: {}"
+    "saving_lang": "Language set to: {}",
+    "critic_error": "Critical error during copying {}: {}"
   },
   "es": {
     "config_not_found": "No se ha encontrado el archivo de configuración",
@@ -80,7 +81,8 @@ TEXTOS = {
     "corrupt_warning": "Aviso: El mundo {} parece estar corrupto o no tiene level.dat",
     "saving_local": "Guardando nueva ruta local: {}",
     "saving_cloud": "Guardando nueva ruta de la nube: {}",
-    "saving_lang": "Idioma establecido a: {}"
+    "saving_lang": "Idioma establecido a: {}",
+    "critic_error": "Error crítico durante la copia de {}: {}"
   }
 }
 
@@ -116,11 +118,14 @@ def cargar_configuracion():
   config = {
     "ruta_local": Path(datos["ruta_local"]),
     "ruta_nube": Path(datos["ruta_nube"]),
-    "blacklist": []
+    "blacklist": [],
+    "estado_sync": {}
   }
 
   if "blacklist" in datos:
     config["blacklist"] = datos["blacklist"]
+  if "estado_sync" in datos:
+    config["estado_sync"] = datos["estado_sync"]
 
   return config
 
@@ -221,10 +226,31 @@ def main():
         # Copiar local a nube
         ruta_mundo_local = Path(rutas["ruta_local"] / mundo)
         ruta_mundo_nube = Path(rutas["ruta_nube"] / mundo)
-        if not args.dry_run: 
-          shutil.copytree(ruta_mundo_local, ruta_mundo_nube)
-        else:
-          print(t("upload_dry").format(ruta_mundo_local, ruta_mundo_nube))
+        
+        # Captura de excepciones para proteger el proceso de copia de mundos
+        try:
+          if not args.dry_run: 
+            shutil.copytree(ruta_mundo_local, ruta_mundo_nube)
+            
+            # Registro de Estado Inicial mtime
+            level_local = ruta_mundo_local / "level.dat"
+            level_nube = ruta_mundo_nube / "level.dat"
+            
+            if level_local.exists() and level_nube.exists():
+              if "estado_sync" not in datos: 
+                datos["estado_sync"] = {}
+              
+              datos["estado_sync"][mundo] = {
+                "local": level_local.stat().st_mtime,
+                "nube": level_nube.stat().st_mtime
+              }
+              guardar_json = True
+            
+          else:
+            print(t("upload_dry").format(ruta_mundo_local, ruta_mundo_nube))
+        except Exception as e:
+          print(t("critic_error").format(mundo, e))
+          continue
     
     # Miramos a ver los mundos en la nube que no están en local
     for mundo in mundos_nube[:]:
@@ -237,16 +263,38 @@ def main():
         # Copiar de nube a local
         ruta_mundo_local = Path(rutas["ruta_local"] / mundo)
         ruta_mundo_nube = Path(rutas["ruta_nube"] / mundo)
-        if not args.dry_run:
-          shutil.copytree(ruta_mundo_nube, ruta_mundo_local)
-        else:
-          print(t("download_dry").format(ruta_mundo_nube, ruta_mundo_local))
+        
+        # Captura de excepciones para proteger el proceso de copia de mundos
+        try:
+          if not args.dry_run:
+            shutil.copytree(ruta_mundo_nube, ruta_mundo_local)
+            
+            # Registro de Estado Inicial mtime
+            level_local = ruta_mundo_local / "level.dat"
+            level_nube = ruta_mundo_nube / "level.dat"
+            
+            if level_local.exists() and level_nube.exists():
+              if "estado_sync" not in datos: 
+                datos["estado_sync"] = {}
+              
+              datos["estado_sync"][mundo] = {
+                "local": level_local.stat().st_mtime,
+                "nube": level_nube.stat().st_mtime
+              }
+              guardar_json = True
+            
+          else:
+            print(t("download_dry").format(ruta_mundo_nube, ruta_mundo_local))
+        except Exception as e:
+          print(t("critic_error").format(mundo, e))
+          continue
     
     # Si los mundos están en los dos lados comprobamos cual se ha modificado más recientemente
     for mundo in mundos_locales:
-      # Comprobación de blacklist (Ahora protegido usando 'rutas')
+      # Comprobación de si el mundo está en la blacklist
       if mundo in rutas["blacklist"]:
         continue
+      
       ruta_mundo_local = Path(rutas["ruta_local"] / mundo)
       ruta_mundo_nube = Path(rutas["ruta_nube"] / mundo)
       level_local = ruta_mundo_local / "level.dat"
@@ -256,23 +304,56 @@ def main():
         tiempo_modificado_local = level_local.stat().st_mtime
         tiempo_modificado_nube = level_nube.stat().st_mtime
         
-        if tiempo_modificado_local > tiempo_modificado_nube:
-          # Sobreescribir el local en la nube
-          if not args.dry_run:
-            print(t("overwrite_cloud").format(mundo))
-            shutil.rmtree(ruta_mundo_nube)
-            shutil.copytree(ruta_mundo_local, ruta_mundo_nube)
-          else:
-            print(t("overwrite_cloud_dry").format(ruta_mundo_nube, ruta_mundo_local))
+        # Recuperamos las fechas del último sync (si no existen, asumimos 0)
+        estado_anterior = rutas["estado_sync"].get(mundo, {"local": 0, "nube": 0})
+        ultimo_local_conocido = estado_anterior["local"]
+        ultima_nube_conocida = estado_anterior["nube"]
         
-        elif tiempo_modificado_nube > tiempo_modificado_local:
-          # Sobreescribir el de la nube en local
-          if not args.dry_run:
-            print(t("overwrite_local").format(mundo))
-            shutil.rmtree(ruta_mundo_local)
-            shutil.copytree(ruta_mundo_nube, ruta_mundo_local)
-          else:
-            print(t("overwrite_local_dry").format(ruta_mundo_local, ruta_mundo_nube))
+        # Comprobación de si ha cambiado el tiempo
+        local_ha_cambiado = tiempo_modificado_local > ultimo_local_conocido
+        nube_ha_cambiado = tiempo_modificado_nube > ultima_nube_conocida
+
+        if local_ha_cambiado:
+          # Si local cambió, seguro que jugamos aquí. Subimos a la nube ignorando el mtime de la nube.
+          try:
+            if not args.dry_run:
+              print(t("overwrite_cloud").format(mundo))
+              shutil.rmtree(ruta_mundo_nube)
+              shutil.copytree(ruta_mundo_local, ruta_mundo_nube)
+              # Guardamos las nuevas fechas
+              if "estado_sync" not in datos: datos["estado_sync"] = {}
+              datos["estado_sync"][mundo] = {
+                "local": tiempo_modificado_local,
+                # Leemos la fecha real que el SO le dio al archivo recién copiado en la nube
+                "nube": (ruta_mundo_nube / "level.dat").stat().st_mtime 
+              }
+              guardar_json = True
+            else:
+              print(t("overwrite_cloud_dry").format(ruta_mundo_nube, ruta_mundo_local))
+          except Exception as e:
+            print(t("critic_error").format(mundo, e))
+            continue
+        
+        elif nube_ha_cambiado and not local_ha_cambiado:
+          # Si la nube cambió pero local está intacto, alguien jugó en otro PC (o la nube se actualizó sola).
+          # Descargamos sin miedo.
+          try:
+            if not args.dry_run:
+              print(t("overwrite_local").format(mundo))
+              shutil.rmtree(ruta_mundo_local)
+              shutil.copytree(ruta_mundo_nube, ruta_mundo_local)
+              # Guardamos las nuevas fechas
+              if "estado_sync" not in datos: datos["estado_sync"] = {}
+              datos["estado_sync"][mundo] = {
+                "local": (ruta_mundo_local / "level.dat").stat().st_mtime,
+                "nube": tiempo_modificado_nube
+              }
+              guardar_json = True
+            else:
+              print(t("overwrite_local_dry").format(ruta_mundo_local, ruta_mundo_nube))
+          except Exception as e:
+            print(t("critic_error").format(mundo, e))
+            continue
         
         else:
           if not args.dry_run:
