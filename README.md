@@ -107,7 +107,7 @@ You can configure Prism Launcher to automatically sync your worlds every time yo
 4. In the **Post-launch command** field, paste the corresponding command for your operating system:
 
 **Windows:**
-`start cmd /k "python C:\path\to\mssync.py sync"`
+`cmd /c start cmd /k "python C:\path\to\mssync.py sync"`
 
 **Linux (GNOME):**
 `gnome-terminal -- bash -c "python /path/to/mssync.py sync; echo ''; read -p 'Press Enter to close...'"`
