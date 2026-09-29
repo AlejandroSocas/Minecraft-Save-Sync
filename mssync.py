@@ -59,7 +59,9 @@ TEXTOS = {
     "tray_sync": "Synchronize now",
     "tray_auto": "Autostart",
     "tray_exit": "Exit",
-    "tray_title": "Minecraft Sync"
+    "tray_title": "Minecraft Sync",
+    "sync_in_progress": "A synchronization is already in progress, skipping...",
+    "mc_running": "Cannot synchronize: Minecraft is currently running."
   },
   "es": {
     "config_not_found": "No se ha encontrado el archivo de configuración",
@@ -103,7 +105,9 @@ TEXTOS = {
     "tray_sync": "Sincronizar ahora",
     "tray_auto": "Autoarranque",
     "tray_exit": "Salir",
-    "tray_title": "Minecraft Sync"
+    "tray_title": "Minecraft Sync",
+    "sync_in_progress": "Ya hay una sincronización en curso, omitiendo...",
+    "mc_running": "No se puede sincronizar: Minecraft se encuentra en ejecución."
   }
 }
 
@@ -178,7 +182,7 @@ def minecraft_en_ejecucion():
   return False
 
 
-def ejecutar_sincronizacion(args):
+def _ejecutar_sincronizacion_interna(args):
   """Ejecuta la lógica de sincronización utilizando archivos ZIP para subirlo a la nube"""
   guardar_json = False
 
@@ -299,9 +303,6 @@ def ejecutar_sincronizacion(args):
         try:
           if not args.dry_run:
             print(t("overwrite_cloud").format(mundo))
-            if ruta_mundo_nube_zip.exists():
-              ruta_mundo_nube_zip.unlink()
-            
             shutil.make_archive(str(ruta_mundo_nube_base), 'zip', str(ruta_mundo_local))
             
             if "estado_sync" not in datos: datos["estado_sync"] = {}
@@ -355,6 +356,20 @@ def ejecutar_sincronizacion(args):
       json.dump(datos, archivo, indent=2)
 
 
+sync_lock = threading.Lock()
+
+
+def ejecutar_sincronizacion(args):
+  """Lanza la lógica de sincronización protegiendo contra ejecuciones concurrentes"""
+  if not sync_lock.acquire(blocking=False):
+    print(t("sync_in_progress"))
+    return
+  try:
+    _ejecutar_sincronizacion_interna(args)
+  finally:
+    sync_lock.release()
+
+
 def tarea_en_segundo_plano(intervalo_minutos, args, icono):
   # Retraso inicial para dar tiempo a dibujar el icono
   time.sleep(2)
@@ -385,8 +400,10 @@ def tarea_en_segundo_plano(intervalo_minutos, args, icono):
 
 def accion_sincronizar(args):
   """Lanza la lógica de sincronización si minecraft no está en ejecución"""
-  if not minecraft_en_ejecucion():
-    ejecutar_sincronizacion(args)
+  if minecraft_en_ejecucion():
+    print(t("mc_running"))
+    return
+  threading.Thread(target=ejecutar_sincronizacion, args=(args,), daemon=True).start()
 
 
 def accion_salir(icono, item):
