@@ -47,7 +47,8 @@ TEXTOS = {
     "tray_exit": "Exit",
     "tray_title": "Minecraft Sync",
     "sync_in_progress": "A synchronization is already in progress, skipping...",
-    "mc_running": "Cannot synchronize: Minecraft is currently running."
+    "mc_running": "Cannot synchronize: Minecraft is currently running.",
+    "saving_start_parameters": "Saving autostart parameters: {}"
   },
   "es": {
     "config_not_found": "No se ha encontrado el archivo de configuración",
@@ -93,7 +94,8 @@ TEXTOS = {
     "tray_exit": "Salir",
     "tray_title": "Minecraft Sync",
     "sync_in_progress": "Ya hay una sincronización en curso, omitiendo...",
-    "mc_running": "No se puede sincronizar: Minecraft se encuentra en ejecución."
+    "mc_running": "No se puede sincronizar: Minecraft se encuentra en ejecución.",
+    "saving_start_parameters": "Guardando parámetros de autoarranque: {}"
   }
 }
 
@@ -125,23 +127,16 @@ def cargar_configuracion():
     with open(ARCHIVO_CONFIG, "r") as archivo:
       datos = json.load(archivo)
   except FileNotFoundError:
-    print(t("config_not_found"))
     return None
   
   if "ruta_local" not in datos or "ruta_nube" not in datos:
-    print(t("config_incomplete"))
     return None
 
   config = {
     "ruta_local": Path(datos["ruta_local"]),
     "ruta_nube": Path(datos["ruta_nube"]),
-    "blacklist": [],
-    "estado_sync": {}
+    "blacklist": datos.get("blacklist", []),
+    "estado_sync": datos.get("estado_sync", {})
   }
-
-  if "blacklist" in datos:
-    config["blacklist"] = datos["blacklist"]
-  if "estado_sync" in datos:
-    config["estado_sync"] = datos["estado_sync"]
 
   return config

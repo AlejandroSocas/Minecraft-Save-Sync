@@ -209,13 +209,3 @@ class SyncWorker(QThread):
     if guardar_json:
       with open(ARCHIVO_CONFIG, "w") as archivo:
         json.dump(datos, archivo, indent=2)
-
-""" def ejecutar_sincronizacion(args):
-  Lanza la lógica de sincronización protegiendo contra ejecuciones concurrentes
-  if not sync_lock.acquire(blocking=False):
-    print(t("sync_in_progress"))
-    return
-  try:
-    _ejecutar_sincronizacion_interna(args)
-  finally:
-    sync_lock.release() """
