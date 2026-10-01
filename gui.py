@@ -12,6 +12,10 @@ class Ventana(QMainWindow):
     self.args = args
     self.setWindowTitle("MSSync")
 
+    # Hacemos la consola solo se pueda leer
+    self.ui.consola.setReadOnly(True)
+
+    # Precargamos las rutas y parámetros de autoarranque para mostrarlas si existen
     if ARCHIVO_CONFIG.exists():
       with open(ARCHIVO_CONFIG, "r") as archivo:
         config = json.load(archivo)
@@ -22,6 +26,7 @@ class Ventana(QMainWindow):
         if "parametros_autoarranque" in config:
           self.ui.autostart_parameters_line_edit.setText(config["parametros_autoarranque"])
 
+    # Asignamos las funciones a los botones de la interfaz
     self.ui.setlp.clicked.connect(self.asignar_ruta_local)
     self.ui.setcp.clicked.connect(self.asignar_ruta_nube)
     self.ui.SetAP.clicked.connect(self.asignar_parametros_autoarranque)
@@ -35,7 +40,7 @@ class Ventana(QMainWindow):
     self.worker = SyncWorker(args=self.args)
     # Conectamos las señales a funciones de la GUI
     self.worker.signals.log_message.connect(self.actualizar_consola)
-    self.worker.signals.finished.connect(self.sync_finished)
+    self.worker.signals.finished.connect(self.sincronizacion_finalizada)
     
     self.worker.start() # Esto llama a run() en segundo plano
 
@@ -77,9 +82,3 @@ class Ventana(QMainWindow):
       self.actualizar_consola("Autoarranque activado en el sistema.")
     else:
       self.actualizar_consola("Autoarranque desactivado.")
-
-if __name__ == "__main__":
-  app = QApplication(sys.argv)
-  ventana = Ventana(args="hola")
-  ventana.show()
-  sys.exit(app.exec())
