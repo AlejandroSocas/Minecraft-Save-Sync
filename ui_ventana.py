@@ -113,7 +113,7 @@ class Ui_MainWindow(object):
         self.boton_sync.setText(QCoreApplication.translate("MainWindow", u"Sync", None))
         self.setlp.setText(QCoreApplication.translate("MainWindow", u"SetLP", None))
         self.setcp.setText(QCoreApplication.translate("MainWindow", u"SetCP", None))
-        self.autostart_checkbox.setText(QCoreApplication.translate("MainWindow", u"Aplicar", None))
+        self.autostart_checkbox.setText(QCoreApplication.translate("MainWindow", u"Autostart", None))
         self.SetAP.setText(QCoreApplication.translate("MainWindow", u"SetAP", None))
     # retranslateUi
 

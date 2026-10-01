@@ -13,6 +13,10 @@ class Ventana(QMainWindow):
     self.args = args
     self.setWindowTitle("MSSync")
 
+    # Hacemos la consola solo se pueda leer
+    self.ui.consola.setReadOnly(True)
+
+    # Precargamos las rutas y parámetros de autoarranque para mostrarlas si existen
     if ARCHIVO_CONFIG.exists():
       with open(ARCHIVO_CONFIG, "r") as archivo:
         config = json.load(archivo)
@@ -38,7 +42,7 @@ class Ventana(QMainWindow):
     self.worker = SyncWorker(args=self.args)
     # Conectamos las señales a funciones de la GUI
     self.worker.signals.log_message.connect(self.actualizar_consola)
-    self.worker.signals.finished.connect(self.sync_finished)
+    self.worker.signals.finished.connect(self.sincronizacion_finalizada)
     
     self.worker.start() # Esto llama a run() en segundo plano
 

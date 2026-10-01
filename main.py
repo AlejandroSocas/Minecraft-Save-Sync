@@ -4,7 +4,7 @@ import time
 import sys
 
 from sync_core import *
-
+from gui import *
 
 def main():
   global idioma_actual
@@ -84,13 +84,29 @@ def main():
     with open(ARCHIVO_CONFIG, "w") as archivo:
       json.dump(datos, archivo, indent=2)
   
-  # Arranque de los motores principales
-  if args.tray:
-    iniciar_tray(args.interval, args)
-  elif args.comando == "sync" or args.dry_run:
-    ejecutar_sincronizacion(args)
+  # Arrancamos la GUI
+  app = QApplication(sys.argv)
   
-  sys.exit(0)
+  # Prevenir que la app se cierre si cerramos la ventana principal
+  #app.setQuitOnLastWindowClosed(False)
+  
+  # Instanciamos la ventana pasándole los argumentos
+  ventana = Ventana(args)
+  
+  # Decidimos cómo mostrar el programa según los argumentos
+  if args.tray:
+    # Si se arranca con --tray, no hacemos ventana.show(), se queda oculto
+    pass
+  else:
+    ventana.show()
+    
+    # Si el usuario ejecutó "python mssync.py sync" desde la terminal,
+    # abrimos la ventana e iniciamos la sincronización automáticamente.
+    if args.comando == "sync" or args.dry_run:
+      ventana.start_sync()
+  
+  # Iniciamos el bucle de eventos de Qt
+  sys.exit(app.exec())
 
 if __name__ == "__main__":
   main()
