@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import QMainWindow, QApplication, QSystemTrayIcon, QMenu
 from PySide6.QtGui import QIcon, QAction
+from PySide6.QtCore import QTimer
 from ui_ventana import Ui_MainWindow
 
 from sync_core import *
@@ -36,20 +37,31 @@ class Ventana(QMainWindow):
     self.ui.autostart_checkbox.setChecked(autoarranque_activado())
     self.ui.autostart_checkbox.toggled.connect(self.cambiar_autoarranque)
 
+    self.timer_sync = QTimer(self)
+    self.timer_sync.timeout.connect(self.empezar_sincronizacion)
+    self.timer_sync.start(self.args.interval * 60 * 1000)
+
   def empezar_sincronizacion(self):
-    self.ui.boton_sync.setEnabled(False) # Bloquear botón para evitar dobles clics
-    
+    # Comprobar si Minecraft está en ejecución
+    if minecraft_en_ejecucion():
+      self.actualizar_consola(t("mc_running"))
+      return
+
+    # Comprobar si ya hay una sincronización en curso
+    if hasattr(self, 'worker') and self.worker.isRunning():
+      self.actualizar_consola(t("sync_in_progress"))
+      return
+
+    self.ui.boton_sync.setEnabled(False)
     self.worker = SyncWorker(args=self.args)
-    # Conectamos las señales a funciones de la GUI
     self.worker.signals.log_message.connect(self.actualizar_consola)
     self.worker.signals.finished.connect(self.sincronizacion_finalizada)
-    
-    self.worker.start() # Esto llama a run() en segundo plano
+    self.worker.start()
 
   def actualizar_consola(self, mensaje):
     self.ui.consola.append(mensaje) # Añade texto a la consola virtual
 
-  def sincronizacion_finalizada(self, correcto):
+  def sincronizacion_finalizada(self, _):
     self.ui.boton_sync.setEnabled(True)
 
   def actualizar_config(self, clave, valor):
@@ -97,7 +109,7 @@ class Ventana(QMainWindow):
     accion_abrir.triggered.connect(self.showNormal) # showNormal restaura la ventana
 
     accion_sync = QAction("Sincronizar ahora", self)
-    accion_sync.triggered.connect(self.start_sync)
+    accion_sync.triggered.connect(self.empezar_sincronizacion)
 
     accion_salir = QAction("Salir", self)
     # QApplication.instance().quit mata todo el programa de forma segura
@@ -113,8 +125,8 @@ class Ventana(QMainWindow):
     self.tray_icon.setContextMenu(self.tray_menu)
     self.tray_icon.show()
 
-if __name__ == "__main__":
-  app = QApplication(sys.argv)
-  ventana = Ventana(args="hola")
-  ventana.show()
-  sys.exit(app.exec())
+  def closeEvent(self, event):
+    # Ignoramos la orden de destrucción
+    event.ignore()
+    # Ocultamos la ventana (desaparece de la barra de tareas normal)
+    self.hide()

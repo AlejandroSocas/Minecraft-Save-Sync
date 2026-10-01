@@ -1,4 +1,5 @@
 import psutil
+import zipfile
 import sys
 
 from config import *
@@ -67,3 +68,24 @@ def alternar_autoarranque(activar):
     ruta.write_text(contenido)
   elif sys.platform == "win32":
     ruta.write_text(f'@echo off\nstart "" /b {comando}\n')
+
+
+def zip_es_valido(ruta_zip):
+  """Comprueba si un archivo zip está corrupto o incompleto"""
+  try:
+    with zipfile.ZipFile(ruta_zip, 'r') as z:
+      # testzip() devuelve el nombre del primer archivo corrupto, o None si todo está bien
+      if z.testzip() is not None:
+        return False
+      
+      # Comprobación extra: Verificar que el nivel base (level.dat) existe dentro del zip
+      # Esto evita que se extraiga un mundo vacío o a medias
+      archivos = z.namelist()
+      
+      # level.dat puede estar en la raíz o dentro de una subcarpeta, comprobamos si alguna ruta lo contiene
+      if not any(archivo.endswith("level.dat") for archivo in archivos):
+        return False
+        
+    return True
+  except zipfile.BadZipFile:
+    return False

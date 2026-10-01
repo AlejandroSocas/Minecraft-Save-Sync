@@ -1,6 +1,4 @@
 import argparse
-from PIL import Image, ImageDraw
-import time
 import sys
 
 from sync_core import *
@@ -88,7 +86,7 @@ def main():
   app = QApplication(sys.argv)
   
   # Prevenir que la app se cierre si cerramos la ventana principal
-  #app.setQuitOnLastWindowClosed(False)
+  app.setQuitOnLastWindowClosed(False)
   
   # Instanciamos la ventana pasándole los argumentos
   ventana = Ventana(args)
