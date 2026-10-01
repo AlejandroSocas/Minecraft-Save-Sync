@@ -1,4 +1,5 @@
-from PySide6.QtWidgets import QMainWindow, QTextEdit, QApplication
+from PySide6.QtWidgets import QMainWindow, QApplication, QSystemTrayIcon, QMenu
+from PySide6.QtGui import QIcon, QAction
 from ui_ventana import Ui_MainWindow
 
 from sync_core import *
@@ -21,6 +22,8 @@ class Ventana(QMainWindow):
           self.ui.cloud_path_line_edit.setText(config["ruta_nube"])
         if "parametros_autoarranque" in config:
           self.ui.autostart_parameters_line_edit.setText(config["parametros_autoarranque"])
+
+    self.configurar_tray()
 
     self.ui.setlp.clicked.connect(self.asignar_ruta_local)
     self.ui.setcp.clicked.connect(self.asignar_ruta_nube)
@@ -77,6 +80,34 @@ class Ventana(QMainWindow):
       self.actualizar_consola("Autoarranque activado en el sistema.")
     else:
       self.actualizar_consola("Autoarranque desactivado.")
+
+  def configurar_tray(self):
+    # Crear el objeto System Tray y asignarle una imagen
+    self.tray_icon = QSystemTrayIcon(QIcon("icono.png"), self)
+
+    # 2. Crear el menú desplegable que saldrá al hacer clic derecho
+    self.tray_menu = QMenu()
+
+    # 3. Crear las acciones (los botones) del menú y conectarlas a tus funciones
+    accion_abrir = QAction("Abrir interfaz", self)
+    accion_abrir.triggered.connect(self.showNormal) # showNormal restaura la ventana
+
+    accion_sync = QAction("Sincronizar ahora", self)
+    accion_sync.triggered.connect(self.start_sync)
+
+    accion_salir = QAction("Salir", self)
+    # QApplication.instance().quit mata todo el programa de forma segura
+    accion_salir.triggered.connect(QApplication.instance().quit) 
+
+    # 4. Añadir las acciones al menú en orden
+    self.tray_menu.addAction(accion_abrir)
+    self.tray_menu.addAction(accion_sync)
+    self.tray_menu.addSeparator() # Pone una línea divisoria estética
+    self.tray_menu.addAction(accion_salir)
+
+    # 5. Acoplar el menú al icono y mostrarlo en la barra de tareas
+    self.tray_icon.setContextMenu(self.tray_menu)
+    self.tray_icon.show()
 
 if __name__ == "__main__":
   app = QApplication(sys.argv)
