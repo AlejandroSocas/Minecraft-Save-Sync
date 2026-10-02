@@ -22,7 +22,7 @@ class SyncWorker(QThread):
     try:
       self._ejecutar_sincronizacion_interna()
     except Exception as e:
-      self.emit_log(f"Error inesperado: {e}")
+      self.emit_log(t("err_unexpected").format(e))
     finally:
       # Siempre emitimos finished al acabar, haya error o no
       self.signals.finished.emit(True)
@@ -65,15 +65,15 @@ class SyncWorker(QThread):
     if archivo_lock.exists():
       edad_lock = time.time() - archivo_lock.stat().st_mtime
       if edad_lock < 3600:
-        self.emit_log("Otro dispositivo está sincronizando ahora mismo (lock activo). Omitiendo...")
+        self.emit_log(t("lock_active"))
         return
       else:
-        self.emit_log("Se encontró un bloqueo obsoleto. Ignorando...")
+        self.emit_log(t("lock_obsolete"))
 
     try:
       archivo_lock.touch()
     except Exception as e:
-      self.emit_log(f"No se pudo crear el archivo lock: {e}")
+      self.emit_log(t("lock_error").format(e))
       return
     # --- FIN SISTEMA DE BLOQUEO ---
 
@@ -88,7 +88,7 @@ class SyncWorker(QThread):
       # Obtenemos los mundos locales (carpetas) y los de la nube (archivos .zip)
       mundos_locales = [mundo.name for mundo in rutas["ruta_local"].iterdir() if mundo.is_dir()]
       # Filtramos los _temp de la nube por si quedó alguno residual de versiones anteriores
-      mundos_nube = [mundo.stem for mundo in rutas["ruta_nube"].iterdir() if mundo.is_file() and mundo.suffix == '.zip' and not mundo.name.endswith('_temp')]
+      mundos_nube = [mundo.stem for mundo in rutas["ruta_nube"].iterdir() if mundo.is_file() and mundo.suffix == '.zip' and not mundo.stem.endswith('_temp')]
 
       # Subir mundos nuevos a la nube
       for mundo in mundos_locales[:]:
@@ -119,7 +119,7 @@ class SyncWorker(QThread):
                 }
                 guardar_json = True
               
-              self.emit_log(t("world_copied").format(mundo))
+              self.emit_log(t("upload_success").format(mundo))
             else:
               self.emit_log(t("upload_dry").format(ruta_mundo_local, ruta_mundo_nube_zip))
           except Exception as e:
@@ -138,13 +138,26 @@ class SyncWorker(QThread):
           
           # VALIDACIÓN DE INTEGRIDAD
           if not self.args.dry_run and not zip_es_valido(ruta_mundo_nube_zip):
-            self.emit_log(f"Aviso: El archivo de la nube {mundo}.zip está corrupto o incompleto. Omitiendo.")
+            self.emit_log(t("corrupt_cloud_skip").format(mundo))
             continue
 
           try:
             if not self.args.dry_run:
-              # unpack_archive descomprime el contenido del zip dentro de la carpeta local
-              shutil.unpack_archive(str(ruta_mundo_nube_zip), str(ruta_mundo_local))
+              # 1. Copiamos el zip a local (lectura secuencial rápida para rclone)
+              ruta_zip_temp_local = rutas["ruta_local"] / f"{mundo}_descarga.zip"
+              ruta_mundo_temp = rutas["ruta_local"] / f"{mundo}_extraccion"
+              shutil.copy2(str(ruta_mundo_nube_zip), str(ruta_zip_temp_local))
+              
+              # 2. Descomprimimos en una carpeta temporal (reemplazo atómico)
+              shutil.unpack_archive(str(ruta_zip_temp_local), str(ruta_mundo_temp))
+              
+              if ruta_mundo_local.exists():
+                shutil.rmtree(ruta_mundo_local)
+              ruta_mundo_temp.rename(ruta_mundo_local)
+              
+              # 3. Borramos el zip temporal
+              ruta_zip_temp_local.unlink()
+              
               level_local = ruta_mundo_local / "level.dat"
               
               if level_local.exists() and ruta_mundo_nube_zip.exists():
@@ -156,7 +169,7 @@ class SyncWorker(QThread):
                 }
                 guardar_json = True
               
-              self.emit_log(t("world_copied").format(mundo))
+              self.emit_log(t("download_success").format(mundo))
             else:
               self.emit_log(t("download_dry").format(ruta_mundo_nube_zip, ruta_mundo_local))
           except Exception as e:
@@ -183,7 +196,43 @@ class SyncWorker(QThread):
           local_ha_cambiado = tiempo_modificado_local > ultimo_local_conocido
           nube_ha_cambiado = tiempo_modificado_nube > ultima_nube_conocida
 
-          if local_ha_cambiado:
+          if local_ha_cambiado and nube_ha_cambiado:
+            try:
+              if not self.args.dry_run:
+                self.emit_log(t("conflict_both").format(mundo))
+                self.emit_log(t("conflict_backup"))
+                
+                # Renombramos el mundo local actual para no perderlo
+                ruta_mundo_conflicto = rutas["ruta_local"] / f"{mundo}_Conflicto_{int(time.time())}"
+                ruta_mundo_local.rename(ruta_mundo_conflicto)
+                
+                self.emit_log(t("conflict_renamed").format(ruta_mundo_conflicto.name))
+                
+                # Descarga de la nube
+                ruta_zip_temp_local = rutas["ruta_local"] / f"{mundo}_descarga.zip"
+                ruta_mundo_temp = rutas["ruta_local"] / f"{mundo}_extraccion"
+                
+                shutil.copy2(str(ruta_mundo_nube_zip), str(ruta_zip_temp_local))
+                shutil.unpack_archive(str(ruta_zip_temp_local), str(ruta_mundo_temp))
+                
+                ruta_mundo_temp.rename(ruta_mundo_local)
+                ruta_zip_temp_local.unlink()
+                
+                level_local_nuevo = ruta_mundo_local / "level.dat"
+                
+                if "estado_sync" not in datos: datos["estado_sync"] = {}
+                datos["estado_sync"][mundo] = {
+                  "local": int(level_local_nuevo.stat().st_mtime),
+                  "nube": int(ruta_mundo_nube_zip.stat().st_mtime)
+                }
+                guardar_json = True
+              else:
+                self.emit_log(t("conflict_dry").format(mundo))
+            except Exception as e:
+              self.emit_log(t("critic_error").format(mundo, e))
+              continue
+              
+          elif local_ha_cambiado and not nube_ha_cambiado:
             try:
               if not self.args.dry_run:
                 self.emit_log(t("overwrite_cloud").format(mundo))
@@ -199,7 +248,7 @@ class SyncWorker(QThread):
                 }
                 guardar_json = True
                 
-                self.emit_log(t("world_copied").format(mundo))
+                self.emit_log(t("upload_success").format(mundo))
               else:
                 self.emit_log(t("overwrite_cloud_dry").format(ruta_mundo_nube_zip, ruta_mundo_local))
             except Exception as e:
@@ -211,14 +260,25 @@ class SyncWorker(QThread):
               if not self.args.dry_run:
                 # VALIDACIÓN DE INTEGRIDAD
                 if not zip_es_valido(ruta_mundo_nube_zip):
-                  self.emit_log(f"Aviso: El archivo de la nube {mundo}.zip está corrupto o incompleto. Se cancela la sobreescritura.")
+                  self.emit_log(t("corrupt_cloud_cancel").format(mundo))
                   continue
 
                 self.emit_log(t("overwrite_local").format(mundo))
+                  
+                # Mismo proceso: copiar secuencialmente y luego descomprimir en carpeta temporal
+                ruta_zip_temp_local = rutas["ruta_local"] / f"{mundo}_descarga.zip"
+                ruta_mundo_temp = rutas["ruta_local"] / f"{mundo}_extraccion"
+                
+                shutil.copy2(str(ruta_mundo_nube_zip), str(ruta_zip_temp_local))
+                shutil.unpack_archive(str(ruta_zip_temp_local), str(ruta_mundo_temp))
+                
+                # Reemplazo atómico: solo borramos el original si la extracción tuvo éxito
                 if ruta_mundo_local.exists():
                   shutil.rmtree(ruta_mundo_local)
-                  
-                shutil.unpack_archive(str(ruta_mundo_nube_zip), str(ruta_mundo_local))
+                ruta_mundo_temp.rename(ruta_mundo_local)
+                
+                ruta_zip_temp_local.unlink()
+                
                 level_local_nuevo = ruta_mundo_local / "level.dat"
                 
                 if "estado_sync" not in datos: datos["estado_sync"] = {}
@@ -228,7 +288,7 @@ class SyncWorker(QThread):
                 }
                 guardar_json = True
                 
-                self.emit_log(t("world_copied").format(mundo))
+                self.emit_log(t("download_success").format(mundo))
               else:
                 self.emit_log(t("overwrite_local_dry").format(ruta_mundo_local, ruta_mundo_nube_zip))
             except Exception as e:
@@ -252,7 +312,7 @@ class SyncWorker(QThread):
       if archivo_lock.exists():
         try:
           if not self.args.dry_run:
-            self.emit_log("Finalizando... Esperando 30 segundos para liberar el bloqueo.")
+            self.emit_log(t("lock_wait"))
             time.sleep(30)
           archivo_lock.unlink()
         except Exception:

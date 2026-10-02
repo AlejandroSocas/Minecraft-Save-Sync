@@ -143,9 +143,9 @@ class Ventana(QMainWindow):
     # activado es True si se acaba de marcar, False si se desmarcó
     alternar_autoarranque(activado)
     if activado:
-      self.actualizar_consola("Autoarranque activado en el sistema.")
+      self.actualizar_consola(t("auto_enabled"))
     else:
-      self.actualizar_consola("Autoarranque desactivado.")
+      self.actualizar_consola(t("auto_disabled"))
 
   def configurar_tray(self):
     self.tray_icon = QSystemTrayIcon(QIcon(obtener_ruta_recurso("icono.png")), self)

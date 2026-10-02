@@ -8,7 +8,10 @@ A bilingual (English/Spanish) Python desktop application and script that synchro
 
 It automatically compresses each world into `.zip` files in the cloud to optimize upload/download speeds. Additionally, it features advanced security mechanisms: atomic writes, ZIP integrity validation, and a lock system to prevent corruption if synchronization is attempted from multiple PCs simultaneously. Compatible with Windows and Linux.
 
-## Warning
+## Warning and Mandatory Cloud Usage
+> [!IMPORTANT]
+> **Before running or scheduling the synchronizer**, it is mandatory that your cloud client (Google Drive, rclone, OneDrive, etc.) has finished updating the virtual folder on your computer. If the local cloud folder is not synchronized with the server, this tool will not detect recent changes and will fail to download the latest version of your worlds.
+
 This script uses compression, overwrite, and deletion operations. Although it includes security validations, it is highly recommended to **make a manual backup** of your worlds before using the tool for the first time to avoid any loss of progress in case of an incorrect path configuration.
 
 ## Installation (Recommended Method)

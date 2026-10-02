@@ -8,7 +8,10 @@ Aplicación de escritorio y script de Python bilingüe (Inglés/Español) que se
 
 Comprime automáticamente cada mundo en archivos `.zip` en la nube para optimizar la velocidad de subida/bajada. Además, cuenta con mecanismos avanzados de seguridad: escritura atómica, validación de integridad de los ZIP y un sistema de bloqueo (*lock*) para evitar corrupciones si se intenta sincronizar desde varios PCs simultáneamente. Compatible con Windows y Linux.
 
-## Advertencia
+## Advertencia y Uso Obligatorio de la Nube
+> [!IMPORTANT]
+> **Antes de ejecutar o programar el sincronizador**, es obligatorio que tu cliente de la nube (Google Drive, rclone, OneDrive, etc.) haya terminado de actualizar la carpeta virtual en tu equipo. Si la carpeta de la nube local no está sincronizada con el servidor, esta herramienta no detectará los cambios recientes y no podrá descargar la última versión de tus mundos.
+
 Este script utiliza operaciones de compresión, sobrescritura y borrado. Aunque cuenta con validaciones de seguridad, se recomienda encarecidamente **hacer una copia de seguridad manual** de tus mundos antes de usar la herramienta por primera vez, para evitar pérdidas de progreso en caso de configurar las rutas incorrectamente.
 
 ## Instalación (Método Recomendado)
