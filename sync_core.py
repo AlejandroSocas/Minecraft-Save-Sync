@@ -87,7 +87,7 @@ class SyncWorker(QThread):
 
       # Obtenemos los mundos locales (carpetas) y los de la nube (archivos .zip)
       mundos_locales = [mundo.name for mundo in rutas["ruta_local"].iterdir() if mundo.is_dir()]
-      # Modificado: Filtramos los _temp de la nube para no detectarlos como mundos
+      # Filtramos los _temp de la nube por si quedó alguno residual de versiones anteriores
       mundos_nube = [mundo.stem for mundo in rutas["ruta_nube"].iterdir() if mundo.is_file() and mundo.suffix == '.zip' and not mundo.name.endswith('_temp')]
 
       # Subir mundos nuevos a la nube
@@ -100,16 +100,13 @@ class SyncWorker(QThread):
           ruta_mundo_local = rutas["ruta_local"] / mundo
           ruta_mundo_nube_zip = rutas["ruta_nube"] / f"{mundo}.zip"
           
-          # Rutas temporales para escritura atómica
-          ruta_mundo_nube_base_temp = rutas["ruta_nube"] / f"{mundo}_temp"
-          ruta_mundo_nube_zip_temp = rutas["ruta_nube"] / f"{mundo}_temp.zip"
+          ruta_mundo_nube_base = rutas["ruta_nube"] / mundo
           
           try:
             if not self.args.dry_run: 
               # make_archive añade la extensión .zip automáticamente al final de ruta_mundo_nube_base
-              # ESCRITURA ATÓMICA: Comprimimos en el archivo temporal y luego renombramos
-              shutil.make_archive(str(ruta_mundo_nube_base_temp), 'zip', str(ruta_mundo_local))
-              ruta_mundo_nube_zip_temp.replace(ruta_mundo_nube_zip)
+              # Comprimimos directamente en el archivo final sin usar archivos temporales
+              shutil.make_archive(str(ruta_mundo_nube_base), 'zip', str(ruta_mundo_local))
               
               level_local = ruta_mundo_local / "level.dat"
               
@@ -191,12 +188,9 @@ class SyncWorker(QThread):
               if not self.args.dry_run:
                 self.emit_log(t("overwrite_cloud").format(mundo))
                 
-                # ESCRITURA ATÓMICA para sobreescritura
-                ruta_mundo_nube_base_temp = rutas["ruta_nube"] / f"{mundo}_temp"
-                ruta_mundo_nube_zip_temp = rutas["ruta_nube"] / f"{mundo}_temp.zip"
-
-                shutil.make_archive(str(ruta_mundo_nube_base_temp), 'zip', str(ruta_mundo_local))
-                ruta_mundo_nube_zip_temp.replace(ruta_mundo_nube_zip)
+                # Comprimimos directamente sin usar archivos temporales para sobreescritura
+                ruta_mundo_nube_base = rutas["ruta_nube"] / mundo
+                shutil.make_archive(str(ruta_mundo_nube_base), 'zip', str(ruta_mundo_local))
                 
                 if "estado_sync" not in datos: datos["estado_sync"] = {}
                 datos["estado_sync"][mundo] = {
@@ -254,9 +248,12 @@ class SyncWorker(QThread):
           json.dump(datos, archivo, indent=2)
 
     finally:
-      # Limpieza del archivo lock
+      # Limpieza del archivo lock con espera
       if archivo_lock.exists():
         try:
+          if not self.args.dry_run:
+            self.emit_log("Finalizando... Esperando 30 segundos para liberar el bloqueo.")
+            time.sleep(30)
           archivo_lock.unlink()
         except Exception:
           pass
