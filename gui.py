@@ -17,6 +17,11 @@ class Ventana(QMainWindow):
     # Hacemos la consola solo se pueda leer
     self.ui.consola.setReadOnly(True)
 
+    # Configurar el menú del tray ANTES de traducir
+    self.configurar_tray()
+
+    idioma_guardado = "en"
+
     # Precargamos las rutas y parámetros de autoarranque para mostrarlas si existen
     if ARCHIVO_CONFIG.exists():
       with open(ARCHIVO_CONFIG, "r") as archivo:
@@ -27,8 +32,19 @@ class Ventana(QMainWindow):
           self.ui.cloud_path_line_edit.setText(config["ruta_nube"])
         if "parametros_autoarranque" in config:
           self.ui.autostart_parameters_line_edit.setText(config["parametros_autoarranque"])
+        if "idioma" in config:
+          idioma_guardado = config["idioma"]
 
-    self.configurar_tray()
+    # Configurar el selector de idioma bloqueando las señales temporales
+    self.ui.select_language.blockSignals(True)
+    if idioma_guardado == "es":
+      self.ui.select_language.setCurrentIndex(1) # Selecciona Español
+    else:
+      self.ui.select_language.setCurrentIndex(0) # Selecciona English
+    self.ui.select_language.blockSignals(False)
+      
+    # Conectamos el cambio del desplegable a nuestra función
+    self.ui.select_language.currentIndexChanged.connect(self.cambiar_idioma)
 
     self.ui.setlp.clicked.connect(self.asignar_ruta_local)
     self.ui.setcp.clicked.connect(self.asignar_ruta_nube)
@@ -40,6 +56,37 @@ class Ventana(QMainWindow):
     self.timer_sync = QTimer(self)
     self.timer_sync.timeout.connect(self.empezar_sincronizacion)
     self.timer_sync.start(self.args.interval * 60 * 1000)
+
+    # Forzamos la traducción de la interfaz al terminar de cargar todo
+    self.traducir_interfaz()
+
+  def cambiar_idioma(self, index):
+    """Se ejecuta cada vez que el usuario cambia el valor del ComboBox"""
+    nuevo_idioma = "en" if index == 0 else "es"
+    
+    # Cambiamos la variable global
+    establecer_idioma(nuevo_idioma)
+    
+    # Guardamos el cambio en config.json
+    self.actualizar_config("idioma", nuevo_idioma)
+    
+    # Refrescamos todos los textos de la pantalla
+    self.traducir_interfaz()
+    self.actualizar_consola(t("saving_lang").format(nuevo_idioma))
+
+  def traducir_interfaz(self):
+    self.ui.local_path_label.setText(t("lbl_local"))
+    self.ui.cloud_path_label.setText(t("lbl_cloud"))
+    self.ui.autostart_parameters_label.setText(t("lbl_autostart"))
+    self.ui.boton_sync.setText(t("btn_sync"))
+    self.ui.autostart_checkbox.setText(t("chkbx_autostart"))
+    self.ui.setlp.setText(t("btn_local"))
+    self.ui.setcp.setText(t("btn_cloud"))
+    self.ui.SetAP.setText(t("btn_autostart"))
+
+    self.accion_abrir.setText(t("tray_open"))
+    self.accion_sync.setText(t("tray_sync"))
+    self.accion_salir.setText(t("tray_exit"))
 
   def empezar_sincronizacion(self):
     # Comprobar si Minecraft está en ejecución
@@ -98,30 +145,24 @@ class Ventana(QMainWindow):
       self.actualizar_consola("Autoarranque desactivado.")
 
   def configurar_tray(self):
-    # Crear el objeto System Tray y asignarle una imagen
     self.tray_icon = QSystemTrayIcon(QIcon("icono.png"), self)
-
-    # 2. Crear el menú desplegable que saldrá al hacer clic derecho
     self.tray_menu = QMenu()
 
-    # 3. Crear las acciones (los botones) del menú y conectarlas a tus funciones
-    accion_abrir = QAction("Abrir interfaz", self)
-    accion_abrir.triggered.connect(self.showNormal) # showNormal restaura la ventana
+    # Guardamos las acciones como variables de clase (self.) para poder traducirlas luego
+    self.accion_abrir = QAction("", self)
+    self.accion_abrir.triggered.connect(self.showNormal)
 
-    accion_sync = QAction("Sincronizar ahora", self)
-    accion_sync.triggered.connect(self.empezar_sincronizacion)
+    self.accion_sync = QAction("", self)
+    self.accion_sync.triggered.connect(self.empezar_sincronizacion)
 
-    accion_salir = QAction("Salir", self)
-    # QApplication.instance().quit mata todo el programa de forma segura
-    accion_salir.triggered.connect(QApplication.instance().quit) 
+    self.accion_salir = QAction("", self)
+    self.accion_salir.triggered.connect(QApplication.instance().quit) 
 
-    # 4. Añadir las acciones al menú en orden
-    self.tray_menu.addAction(accion_abrir)
-    self.tray_menu.addAction(accion_sync)
-    self.tray_menu.addSeparator() # Pone una línea divisoria estética
-    self.tray_menu.addAction(accion_salir)
+    self.tray_menu.addAction(self.accion_abrir)
+    self.tray_menu.addAction(self.accion_sync)
+    self.tray_menu.addSeparator()
+    self.tray_menu.addAction(self.accion_salir)
 
-    # 5. Acoplar el menú al icono y mostrarlo en la barra de tareas
     self.tray_icon.setContextMenu(self.tray_menu)
     self.tray_icon.show()
 

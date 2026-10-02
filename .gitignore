@@ -221,3 +221,6 @@ __marimo__/
 config.json
 
 pruebasync/
+
+dist/
+build/

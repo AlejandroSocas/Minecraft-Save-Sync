@@ -11,50 +11,78 @@ Comprime automáticamente cada mundo en archivos `.zip` en la nube para optimiza
 ## Advertencia
 Este script utiliza operaciones de compresión, sobrescritura y borrado. Aunque cuenta con validaciones de seguridad, se recomienda encarecidamente **hacer una copia de seguridad manual** de tus mundos antes de usar la herramienta por primera vez, para evitar pérdidas de progreso en caso de configurar las rutas incorrectamente.
 
-## Prerrequisitos
+## Instalación (Método Recomendado)
+
+La forma más rápida y sencilla de usar el programa sin necesidad de instalar Python ni ninguna dependencia es descargar el **ejecutable precompilado**:
+
+1. Ve a la sección de **[Releases](https://github.com/AlejandroSocas/Minecraft-Save-Sync/releases)** en la página del repositorio de GitHub.
+2. Descarga el archivo generado para tu sistema operativo (Windows o Linux).
+3. Descomprímelo en la carpeta donde desees guardar el programa.
+4. Haz doble clic en el ejecutable y la aplicación arrancará inmediatamente.
+
+---
+
+## Ejecución desde el Código Fuente (Para desarrolladores)
+
+Si prefieres ejecutar el script directamente desde Python, sigue estos pasos:
+
+### Prerrequisitos
 * Python 3.8 o superior.
-* **Tener tu servicio de nube instalado localmente** (ej. la aplicación de escritorio de Google Drive, OneDrive, Dropbox, etc.), ya que el programa interactúa con la carpeta de sincronización local que crean estos servicios en tu disco duro.
+* **Tener tu servicio de nube instalado localmente** (ej. la aplicación de escritorio de Google Drive, OneDrive, Dropbox, etc.).
 * **Dependencias de Python:** Instala las librerías necesarias ejecutando:
   ```bash
   pip install psutil PySide6
   ```
   *(Nota para usuarios de Linux con GNOME: asegúrate de tener instalada y habilitada la extensión "AppIndicator and KStatusNotifierItem Support" para poder visualizar el icono nativo en la bandeja del sistema).*
 
-## Instalación
+### Descarga del código
 
-Tienes dos opciones para descargar y preparar la herramienta en tu equipo:
+**Opción A: Usando Git**
+```bash
+git clone https://github.com/AlejandroSocas/Minecraft-Save-Sync.git
+cd Minecraft-Save-Sync
+```
 
-**Opción A: Usando Git (Recomendado)**
-1. Abre tu terminal y clona el repositorio:
-   ```bash
-   git clone [https://github.com/AlejandroSocas/Minecraft-Save-Sync.git](https://github.com/AlejandroSocas/Minecraft-Save-Sync.git)
-   ```
+**Opción B: Descarga manual**
+Haz clic en el botón verde "<> Code" en la parte superior derecha de esta página, selecciona "Download ZIP" y descomprímelo en tu equipo.
 
-2. Navega hasta la carpeta recién descargada:
-   ```bash
-   cd Minecraft-Save-Sync
-   ```
-
-**Opción B: Descarga manual (Sin Git)**
-1. Haz clic en el botón verde "<> Code" en la parte superior derecha de esta página y selecciona "Download ZIP".
-2. Descomprime el archivo descargado en la carpeta donde desees guardar el programa.
-3. Abre una terminal y navega hasta esa carpeta (ej: `cd Descargas/Minecraft-Save-Sync`).
+---
 
 ## Uso mediante Interfaz Gráfica (GUI)
 
-La forma más sencilla de utilizar el programa es mediante su interfaz visual. Simplemente ejecuta:
-
-```bash
-python main.py
-```
+La forma más sencilla de utilizar el programa es mediante su interfaz visual. Simplemente abre el ejecutable (o ejecuta `python main.py`).
 
 Esto abrirá una ventana donde podrás:
 * **Configurar las rutas** locales y de la nube fácilmente.
 * Establecer **parámetros de autoarranque personalizados** y activar/desactivar el inicio automático con el sistema.
+* **Cambiar el idioma (Inglés/Español)** dinámicamente con un selector integrado.
 * Monitorear el progreso y detectar errores a través de una **consola de registros en tiempo real**.
 * Lanzar sincronizaciones manuales con un solo clic.
 
 Al cerrar la ventana (la "X"), el programa no se apagará, sino que se minimizará a la bandeja del sistema (junto al reloj) para seguir realizando sincronizaciones automáticas en segundo plano.
+
+## Compilación (Crear un Ejecutable local)
+
+*Nota: En la pestaña de **Releases** de GitHub ya tienes disponibles los ejecutables generados automáticamente para Windows y Linux mediante GitHub Actions. Solo necesitas seguir estos pasos si has modificado el código fuente y quieres compilar tu propia versión.*
+
+Puedes compilar el proyecto en un ejecutable independiente usando `PyInstaller`:
+
+1. Instala la herramienta de compilación:
+   ```bash
+   pip install pyinstaller
+   ```
+2. Ejecuta el comando de compilación ocultando la consola (`--noconsole`) y añadiendo el icono (`--add-data`):
+   * **En Windows:**
+     ```bash
+     pyinstaller --noconsole --add-data "icono.png;." main.py
+     ```
+   * **En Linux:**
+     ```bash
+     pyinstaller --noconsole --add-data "icono.png:." main.py
+     ```
+3. Una vez termine, encontrarás tu programa compilado y listo para usarse haciendo doble clic dentro de la carpeta `dist`.
+
+*Nota:* El sistema de **autoarranque detectará automáticamente** que el programa está compilado y configurará las rutas del sistema operativo apuntando al ejecutable, por lo que todo funcionará a la perfección.
 
 ## Uso por Línea de Comandos (CLI)
 

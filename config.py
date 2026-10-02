@@ -48,7 +48,18 @@ TEXTOS = {
     "tray_title": "Minecraft Sync",
     "sync_in_progress": "A synchronization is already in progress, skipping...",
     "mc_running": "Cannot synchronize: Minecraft is currently running.",
-    "saving_start_parameters": "Saving autostart parameters: {}"
+    "saving_start_parameters": "Saving autostart parameters: {}",
+    "lbl_local": "Local Path:",
+    "lbl_cloud": "Cloud Path:",
+    "lbl_autostart": "Autostart Parameters:",
+    "btn_sync": "Sync",
+    "chkbx_autostart": "Autostart",
+    "btn_local": "SetLP",
+    "btn_cloud": "SetCP",
+    "btn_autostart": "SetAP",
+    "tray_open": "Open GUI",
+    "tray_exit": "Exit",
+    "tray_sync": "Sync now"
   },
   "es": {
     "config_not_found": "No se ha encontrado el archivo de configuración",
@@ -95,7 +106,18 @@ TEXTOS = {
     "tray_title": "Minecraft Sync",
     "sync_in_progress": "Ya hay una sincronización en curso, omitiendo...",
     "mc_running": "No se puede sincronizar: Minecraft se encuentra en ejecución.",
-    "saving_start_parameters": "Guardando parámetros de autoarranque: {}"
+    "saving_start_parameters": "Guardando parámetros de autoarranque: {}",
+    "lbl_local": "Ruta Local:",
+    "lbl_cloud": "Ruta Nube:",
+    "lbl_autostart": "Parámetros Autoarranque:",
+    "btn_sync": "Sincronizar",
+    "chkbx_autostart": "Autoarranque",
+    "btn_local": "GuardarRL",
+    "btn_cloud": "GuardarRN",
+    "btn_autostart": "GuardarPA",
+    "tray_open": "Abrir interfaz",
+    "tray_exit": "Salir",
+    "tray_sync": "Sincronizar ahora"
   }
 }
 
@@ -140,3 +162,9 @@ def cargar_configuracion():
   }
 
   return config
+
+def establecer_idioma(nuevo_idioma):
+  """Actualiza la variable global de idioma en tiempo de ejecución"""
+  global idioma_actual
+  if nuevo_idioma in TEXTOS:
+    idioma_actual = nuevo_idioma

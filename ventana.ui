@@ -15,31 +15,10 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="0" column="0">
-     <widget class="QLabel" name="local_path_label">
+    <item row="0" column="3">
+     <widget class="QPushButton" name="setlp">
       <property name="text">
-       <string>Local Path:</string>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="1" colspan="2">
-     <widget class="QLineEdit" name="local_path_line_edit">
-      <property name="placeholderText">
-       <string>C:\local_saves_path</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="0">
-     <widget class="QLabel" name="cloud_path_label">
-      <property name="text">
-       <string>Cloud Path:</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="1" colspan="2">
-     <widget class="QLineEdit" name="cloud_path_line_edit">
-      <property name="placeholderText">
-       <string>C:\cloud_saves_path</string>
+       <string>SetLP</string>
       </property>
      </widget>
     </item>
@@ -50,27 +29,10 @@
       </property>
      </widget>
     </item>
-    <item row="2" column="2">
-     <widget class="QLineEdit" name="autostart_parameters_line_edit">
-      <property name="placeholderText">
-       <string>-d -i 2 ...</string>
-      </property>
-     </widget>
-    </item>
-    <item row="3" column="0" colspan="3">
-     <widget class="QPushButton" name="boton_sync">
+    <item row="1" column="0">
+     <widget class="QLabel" name="cloud_path_label">
       <property name="text">
-       <string>Sync</string>
-      </property>
-     </widget>
-    </item>
-    <item row="4" column="0" colspan="3">
-     <widget class="QTextEdit" name="consola"/>
-    </item>
-    <item row="0" column="3">
-     <widget class="QPushButton" name="setlp">
-      <property name="text">
-       <string>SetLP</string>
+       <string>Cloud Path:</string>
       </property>
      </widget>
     </item>
@@ -81,10 +43,45 @@
       </property>
      </widget>
     </item>
+    <item row="0" column="1" colspan="2">
+     <widget class="QLineEdit" name="local_path_line_edit">
+      <property name="placeholderText">
+       <string>C:\local_saves_path</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="0">
+     <widget class="QLabel" name="local_path_label">
+      <property name="text">
+       <string>Local Path:</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="2">
+     <widget class="QLineEdit" name="autostart_parameters_line_edit">
+      <property name="placeholderText">
+       <string>-d -i 2 ...</string>
+      </property>
+     </widget>
+    </item>
     <item row="3" column="3">
      <widget class="QCheckBox" name="autostart_checkbox">
       <property name="text">
        <string>Autostart</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="1" colspan="2">
+     <widget class="QLineEdit" name="cloud_path_line_edit">
+      <property name="placeholderText">
+       <string>C:\cloud_saves_path</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="0" colspan="3">
+     <widget class="QPushButton" name="boton_sync">
+      <property name="text">
+       <string>Sync</string>
       </property>
      </widget>
     </item>
@@ -93,6 +90,23 @@
       <property name="text">
        <string>SetAP</string>
       </property>
+     </widget>
+    </item>
+    <item row="6" column="0" colspan="3">
+     <widget class="QTextEdit" name="consola"/>
+    </item>
+    <item row="6" column="3">
+     <widget class="QComboBox" name="select_language">
+      <item>
+       <property name="text">
+        <string>English</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Español</string>
+       </property>
+      </item>
      </widget>
     </item>
    </layout>

@@ -1,0 +1,41 @@
+name: Compilar MSSync
+
+on:
+  workflow_dispatch: # Permite lanzar la compilación manualmente con un botón
+
+jobs:
+  build:
+    name: Compilar en ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        # Aquí definimos los dos sistemas que GitHub levantará en paralelo
+        os: [windows-latest, ubuntu-22.04]
+
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install psutil PySide6 pyinstaller
+
+      - name: Compilar con PyInstaller (Windows)
+        if: matrix.os == 'windows-latest'
+        run: pyinstaller --noconsole --add-data "icono.png;." --name MSSync-Windows main.py
+
+      - name: Compilar con PyInstaller (Linux)
+        if: matrix.os == 'ubuntu-22.04'
+        run: pyinstaller --noconsole --add-data "icono.png:." --name MSSync-Linux main.py
+
+      - name: Subir el ejecutable a GitHub
+        uses: actions/upload-artifact@v4
+        with:
+          name: MSSync-${{ matrix.os }}
+          path: dist/MSSync-*
