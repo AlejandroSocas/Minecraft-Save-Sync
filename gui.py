@@ -21,6 +21,7 @@ class Ventana(QMainWindow):
     self.configurar_tray()
 
     idioma_guardado = "en"
+    parametros_guardados = "-d"
 
     # Precargamos las rutas y parámetros de autoarranque para mostrarlas si existen
     if ARCHIVO_CONFIG.exists():
@@ -31,9 +32,11 @@ class Ventana(QMainWindow):
         if "ruta_nube" in config:
           self.ui.cloud_path_line_edit.setText(config["ruta_nube"])
         if "parametros_autoarranque" in config:
-          self.ui.autostart_parameters_line_edit.setText(config["parametros_autoarranque"])
+          parametros_guardados = config["parametros_autoarranque"]
         if "idioma" in config:
           idioma_guardado = config["idioma"]
+
+    self.ui.autostart_parameters_line_edit.setText(parametros_guardados)
 
     # Configurar el selector de idioma bloqueando las señales temporales
     self.ui.select_language.blockSignals(True)
@@ -145,7 +148,7 @@ class Ventana(QMainWindow):
       self.actualizar_consola("Autoarranque desactivado.")
 
   def configurar_tray(self):
-    self.tray_icon = QSystemTrayIcon(QIcon("icono.png"), self)
+    self.tray_icon = QSystemTrayIcon(QIcon(obtener_ruta_recurso("icono.png")), self)
     self.tray_menu = QMenu()
 
     # Guardamos las acciones como variables de clase (self.) para poder traducirlas luego

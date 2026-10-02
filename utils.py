@@ -1,6 +1,7 @@
 import psutil
 import zipfile
 import sys
+import os
 
 from config import *
 
@@ -89,3 +90,12 @@ def zip_es_valido(ruta_zip):
     return True
   except zipfile.BadZipFile:
     return False
+
+def obtener_ruta_recurso(ruta_relativa):
+  """Obtiene la ruta absoluta al recurso, compatible con PyInstaller"""
+  try:
+    # PyInstaller extrae los datos a una carpeta temporal _MEIPASS
+    ruta_base = sys._MEIPASS
+  except Exception:
+    ruta_base = os.path.abspath(".")
+  return os.path.join(ruta_base, ruta_relativa)
