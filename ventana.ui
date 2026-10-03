@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>608</width>
-    <height>457</height>
+    <width>604</width>
+    <height>449</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,31 +15,10 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="0" column="3">
-     <widget class="QPushButton" name="setlp">
+    <item row="0" column="0">
+     <widget class="QLabel" name="local_path_label">
       <property name="text">
-       <string>SetLP</string>
-      </property>
-     </widget>
-    </item>
-    <item row="2" column="0" colspan="2">
-     <widget class="QLabel" name="autostart_parameters_label">
-      <property name="text">
-       <string>Autostart Parameters:</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="0">
-     <widget class="QLabel" name="cloud_path_label">
-      <property name="text">
-       <string>Cloud Path:</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="3">
-     <widget class="QPushButton" name="setcp">
-      <property name="text">
-       <string>SetCP</string>
+       <string>Local Path:</string>
       </property>
      </widget>
     </item>
@@ -50,24 +29,17 @@
       </property>
      </widget>
     </item>
-    <item row="0" column="0">
-     <widget class="QLabel" name="local_path_label">
+    <item row="0" column="3">
+     <widget class="QPushButton" name="setlp">
       <property name="text">
-       <string>Local Path:</string>
+       <string>SetLP</string>
       </property>
      </widget>
     </item>
-    <item row="2" column="2">
-     <widget class="QLineEdit" name="autostart_parameters_line_edit">
-      <property name="placeholderText">
-       <string>-d -i 2 ...</string>
-      </property>
-     </widget>
-    </item>
-    <item row="3" column="3">
-     <widget class="QCheckBox" name="autostart_checkbox">
+    <item row="1" column="0">
+     <widget class="QLabel" name="cloud_path_label">
       <property name="text">
-       <string>Autostart</string>
+       <string>Cloud Path:</string>
       </property>
      </widget>
     </item>
@@ -78,10 +50,24 @@
       </property>
      </widget>
     </item>
-    <item row="3" column="0" colspan="3">
-     <widget class="QPushButton" name="boton_sync">
+    <item row="1" column="3">
+     <widget class="QPushButton" name="setcp">
       <property name="text">
-       <string>Sync</string>
+       <string>SetCP</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="0" colspan="2">
+     <widget class="QLabel" name="autostart_parameters_label">
+      <property name="text">
+       <string>Autostart Parameters:</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="2">
+     <widget class="QLineEdit" name="autostart_parameters_line_edit">
+      <property name="placeholderText">
+       <string>-d -i 2 ...</string>
       </property>
      </widget>
     </item>
@@ -92,10 +78,31 @@
       </property>
      </widget>
     </item>
-    <item row="6" column="0" colspan="3">
+    <item row="3" column="0" colspan="2">
+     <widget class="QLabel" name="blacklist_label">
+      <property name="text">
+       <string>Blacklist of Worlds</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="2">
+     <widget class="QLineEdit" name="blacklist_line_edit">
+      <property name="placeholderText">
+       <string>world1, world 2, world3</string>
+      </property>
+     </widget>
+    </item>
+    <item row="4" column="3">
+     <widget class="QCheckBox" name="autostart_checkbox">
+      <property name="text">
+       <string>Autostart</string>
+      </property>
+     </widget>
+    </item>
+    <item row="5" column="0" colspan="3">
      <widget class="QTextEdit" name="consola"/>
     </item>
-    <item row="6" column="3">
+    <item row="5" column="3">
      <widget class="QComboBox" name="select_language">
       <item>
        <property name="text">
@@ -109,6 +116,20 @@
       </item>
      </widget>
     </item>
+    <item row="3" column="3">
+     <widget class="QPushButton" name="setbl">
+      <property name="text">
+       <string>SetBL</string>
+      </property>
+     </widget>
+    </item>
+    <item row="4" column="0" colspan="3">
+     <widget class="QPushButton" name="boton_sync">
+      <property name="text">
+       <string>Sync</string>
+      </property>
+     </widget>
+    </item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -116,7 +137,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>608</width>
+     <width>604</width>
      <height>33</height>
     </rect>
    </property>

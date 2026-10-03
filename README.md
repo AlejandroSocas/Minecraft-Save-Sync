@@ -10,7 +10,10 @@ It automatically compresses each world into `.zip` files in the cloud to optimiz
 
 ## Warning and Mandatory Cloud Usage
 > [!IMPORTANT]
-> **Before running or scheduling the synchronizer**, it is mandatory that your cloud client (Google Drive, rclone, OneDrive, etc.) has finished updating the virtual folder on your computer. If the local cloud folder is not synchronized with the server, this tool will not detect recent changes and will fail to download the latest version of your worlds.
+> **Before running or scheduling the synchronizer**, it is mandatory that your cloud client (OneDrive, Google Drive, rclone, etc.) has finished updating the virtual folder on your computer. If the local cloud folder is not synchronized with the server, this tool will not detect recent changes and will fail to download the latest version of your worlds.
+
+> [!TIP]
+> **Cloud Client Recommendation:** It is highly recommended to use **OneDrive** for synchronization. The Google Drive desktop client is known to be significantly slower at processing local changes and may cause more synchronization delays or locked file issues.
 
 This script uses compression, overwrite, and deletion operations. Although it includes security validations, it is highly recommended to **make a manual backup** of your worlds before using the tool for the first time to avoid any loss of progress in case of an incorrect path configuration.
 
@@ -23,6 +26,14 @@ The fastest and easiest way to use the program without needing to install Python
 3. Unzip it into the folder where you want to save the program.
 4. Double-click the executable, and the application will launch immediately.
 
+### Useful commands for autostart in GUI
+```text
+  -t, --tray                Starts the program directly hidden in the system tray
+  -d, --delay               Delays the start by 5 minutes
+  -i, --interval INTERVAL   Minutes between each automatic synchronization (default: 30)
+  -b, --block-autosync      Blocks the autosync function
+```
+
 ---
 
 ## Execution from Source (For developers)
@@ -31,7 +42,7 @@ If you prefer to run the script directly from Python, follow these steps:
 
 ### Prerequisites
 * Python 3.8 or higher.
-* **A cloud service installed locally** (e.g., Google Drive, OneDrive, Dropbox desktop app, etc.).
+* **A cloud service installed locally** (e.g., OneDrive, Google Drive, Dropbox desktop app, etc.).
 * **Python dependencies:** Install the required libraries by running:
   ```bash
   pip install psutil PySide6
@@ -117,6 +128,7 @@ options:
   -d, --delay           Delays the start by 5 minutes
   -i, --interval INTERVAL
                         Minutes between each automatic synchronization (default: 30)
+  -b, --block-autosync  Blocks the autosync function
 ```
 
 ### Useful Command Examples
@@ -144,8 +156,15 @@ You can permanently change the interface to Spanish (or English) with a single c
 python main.py -l es
 ```
 
+## Important Behaviors to Note
+* **Configuration Location:** The settings file (`config.json`) is stored in `%APPDATA%\MSSync` (Windows) or `~/.config/mssync` (Linux). This ensures your configuration survives when updating the executable.
+* **Cloud Deletions:** Deleting a local world will **not** delete it from the cloud. The cloud acts as an eternal backup. If you want to permanently delete a world, you must delete it both locally and from your cloud folder.
+* **Conflicts:** If a world has been modified both locally and in the cloud since the last sync, a conflict occurs. The local world will be renamed to `YourWorld_Conflicto_TIMESTAMP` (kept locally as a backup, visible in Minecraft, but excluded from sync) and the cloud version will be safely downloaded.
+
 ## Included Security Mechanisms
 * **Minecraft Detection:** The program uses `psutil` to detect if the game is open and pauses automatic synchronizations to avoid corrupting save files in use.
-* **Atomic Writes:** Worlds are first compressed into temporary files and are only replaced when compression finishes successfully, protecting your data against sudden power outages or forced closures.
+* **Atomic Writes:** 
+  * *Uploads:* Worlds are directly compressed into the cloud folder to avoid atomic replace issues with virtual drives.
+  * *Downloads:* The cloud zip is sequentially copied locally, extracted into a safe temporary folder (`_extraccion_mssync`), and only replaces the real world folder when the extraction is fully complete.
 * **Integrity Validation:** Before overwriting your local world, it internally verifies that the cloud `.zip` file is complete and contains the base game files (`level.dat`), preventing your world from being overwritten with corrupt downloads.
 * **Lock System:** Uses a lock file (`mssync.lock`) in the cloud to prevent catastrophic collisions if two computers attempt to synchronize modifications at the exact same time.

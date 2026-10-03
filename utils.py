@@ -10,7 +10,7 @@ def minecraft_en_ejecucion():
   """Comprueba si minecraft se encuentra en ejecución"""
   for proc in psutil.process_iter(['name', 'cmdline']):
     try:
-      nombre = proc.info['name'].lower()
+      nombre = (proc.info.get('name') or "").lower()
       cmdline = proc.info.get('cmdline')
       cmdline_str = " ".join(cmdline).lower() if cmdline else ""
       
@@ -53,16 +53,18 @@ def alternar_autoarranque(activar):
   ruta.parent.mkdir(parents=True, exist_ok=True)
   
   # Leemos los parámetros personalizados que el usuario guardó
-  parametros = ""
-  if ARCHIVO_CONFIG.exists():
-    with open(ARCHIVO_CONFIG, "r") as archivo:
-      datos = json.load(archivo)
-      parametros = datos.get("parametros_autoarranque", "")
+  parametros = leer_config().get("parametros_autoarranque", "")
 
   if getattr(sys, 'frozen', False):
     comando = f'"{sys.executable}" {parametros}'.strip()
   else:
-    comando = f'"{sys.executable}" "{Path(__file__).resolve().parent / "main.py"}" {parametros}'.strip()
+    interprete = Path(sys.executable)
+    # En Windows usamos pythonw.exe para que no se abra una consola al iniciar sesión
+    if sys.platform == "win32":
+      interprete_sin_consola = interprete.with_name("pythonw.exe")
+      if interprete_sin_consola.exists():
+        interprete = interprete_sin_consola
+    comando = f'"{interprete}" "{Path(__file__).resolve().parent / "main.py"}" {parametros}'.strip()
   
   if sys.platform.startswith('linux'):
     contenido = f"[Desktop Entry]\nType=Application\nExec={comando}\nHidden=false\nNoDisplay=false\nX-GNOME-Autostart-enabled=true\nName=Minecraft Sync Tray\n"
@@ -93,9 +95,7 @@ def zip_es_valido(ruta_zip):
 
 def obtener_ruta_recurso(ruta_relativa):
   """Obtiene la ruta absoluta al recurso, compatible con PyInstaller"""
-  try:
-    # PyInstaller extrae los datos a una carpeta temporal _MEIPASS
-    ruta_base = sys._MEIPASS
-  except Exception:
-    ruta_base = os.path.abspath(".")
+  # PyInstaller extrae los datos a una carpeta temporal _MEIPASS
+  # Sin compilar usamos la carpeta del script (no la carpeta desde la que se lanzó)
+  ruta_base = getattr(sys, "_MEIPASS", str(Path(__file__).resolve().parent))
   return os.path.join(ruta_base, ruta_relativa)

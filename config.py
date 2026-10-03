@@ -1,5 +1,9 @@
 from pathlib import Path
 import json
+import os
+import sys
+import shutil
+import threading
 
 # Diccionario global de traducciones
 TEXTOS = {
@@ -18,6 +22,7 @@ TEXTOS = {
     "help_tray": "Starts the program in the system tray",
     "help_delay": "Delays the start by 5 minutes",
     "help_interval": "Minutes between each automatic synchronization",
+    "help_block": "Blocks the autosync function",
     "bl_already": "The world '{}' was already in the blacklist",
     "bl_added": "Added world '{}' to the blacklist",
     "bl_removed": "Removed world '{}' from the blacklist",
@@ -52,7 +57,7 @@ TEXTOS = {
     "corrupt_cloud_cancel": "Warning: Cloud file {}.zip is corrupted or incomplete. Overwrite cancelled.",
     "conflict_both": "CONFLICT! The world '{}' has been modified both locally and in the cloud.",
     "conflict_backup": "Creating local backup...",
-    "conflict_renamed": "Local world renamed to '{}'. The cloud version will now be downloaded.",
+    "conflict_renamed": "Local copy saved as '{}' (it will not be synchronized). The cloud version has been downloaded.",
     "conflict_dry": "CONFLICT (Dry Run)! The world '{}' has local and cloud changes.",
     "auto_enabled": "Autostart activated in the system.",
     "auto_disabled": "Autostart deactivated.",
@@ -73,7 +78,22 @@ TEXTOS = {
     "btn_autostart": "SetAP",
     "tray_open": "Open GUI",
     "tray_exit": "Exit",
-    "tray_sync": "Sync now"
+    "tray_sync": "Sync now",
+    "delay_start": "Delayed start (-d): waiting 5 minutes for the first synchronization...",
+    "block_autosync": "Automatic synchronization disabled by parameter.",
+    "placeholder_local": "local_saves_path",
+    "placeholder_cloud": "cloud_saves_path",
+    "placeholder_blacklist": "world1, world 2, world3",
+    "btn_blacklist": "SetBL",
+    "lbl_blacklist": "Blacklist of Worlds",
+    "exit_waiting": "Waiting for the current synchronization to finish before exiting...",
+    "config_corrupt": "The configuration file was corrupted. It has been saved as 'config.json.corrupto' and a new one has been created.",
+    "temp_cleaned": "Removed leftover temporary file: {}",
+    "temp_restored": "Restored world '{}' from an interrupted synchronization.",
+    "mc_opened_abort": "Minecraft has been opened during the synchronization. The remaining worlds have been skipped.",
+    "dry_mode_active": "Simulation mode (-dr) active: no files will be modified.",
+    "auto_updated": "Autostart file updated with the new parameters.",
+    "extract_no_level": "the extracted world does not contain level.dat"
   },
   "es": {
     "config_not_found": "No se ha encontrado el archivo de configuración",
@@ -90,6 +110,7 @@ TEXTOS = {
     "help_tray": "Inicia el programa en la bandeja del sistema",
     "help_delay": "Retrasa el inicio 5 minutos",
     "help_interval": "Minutos entre cada sincronización automática",
+    "help_block": "Bloquea la función de autosincronización",
     "bl_already": "El mundo '{}' ya estaba en la blacklist",
     "bl_added": "Se ha añadido el mundo '{}' a la lista negra",
     "bl_removed": "Se ha quitado el mundo '{}' de la lista negra",
@@ -124,7 +145,7 @@ TEXTOS = {
     "corrupt_cloud_cancel": "Aviso: El archivo de la nube {}.zip está corrupto o incompleto. Se cancela la sobreescritura.",
     "conflict_both": "¡CONFLICTO! El mundo '{}' ha sido modificado tanto en local como en la nube.",
     "conflict_backup": "Creando copia de seguridad local...",
-    "conflict_renamed": "Mundo local renombrado a '{}'. Ahora se descargará la versión de la nube.",
+    "conflict_renamed": "Copia local guardada como '{}' (no se sincronizará). Se ha descargado la versión de la nube.",
     "conflict_dry": "¡CONFLICTO (Dry Run)! El mundo '{}' tiene cambios locales y en la nube.",
     "auto_enabled": "Autoarranque activado en el sistema.",
     "auto_disabled": "Autoarranque desactivado.",
@@ -145,12 +166,42 @@ TEXTOS = {
     "btn_autostart": "GuardarPA",
     "tray_open": "Abrir interfaz",
     "tray_exit": "Salir",
-    "tray_sync": "Sincronizar ahora"
+    "tray_sync": "Sincronizar ahora",
+    "delay_start": "Inicio con retraso (-d): esperando 5 minutos para la primera sincronización...",
+    "block_autosync": "Sincronización automática desactivada por parámetro.",
+    "placeholder_local": "ruta_local_de_los_mundos",
+    "placeholder_cloud": "ruta_local_de_la_nube",
+    "placeholder_blacklist": "mundo1, mundo 2, mundo3",
+    "btn_blacklist": "GuardarLN",
+    "lbl_blacklist": "Lista Negra de Mundos",
+    "exit_waiting": "Esperando a que termine la sincronización en curso antes de salir...",
+    "config_corrupt": "El archivo de configuración estaba corrupto. Se ha guardado como 'config.json.corrupto' y se ha creado uno nuevo.",
+    "temp_cleaned": "Eliminado archivo temporal sobrante: {}",
+    "temp_restored": "Restaurado el mundo '{}' de una sincronización interrumpida.",
+    "mc_opened_abort": "Minecraft se ha abierto durante la sincronización. Se han omitido los mundos restantes.",
+    "dry_mode_active": "Modo simulación (-dr) activo: no se modificará ningún archivo.",
+    "auto_updated": "Archivo de autoarranque actualizado con los nuevos parámetros.",
+    "extract_no_level": "el mundo extraído no contiene level.dat"
   }
 }
 
 DIRECTORIO_SCRIPT = Path(__file__).parent
-ARCHIVO_CONFIG = DIRECTORIO_SCRIPT / "config.json"
+
+def obtener_directorio_config():
+  """Devuelve la carpeta de configuración del usuario según el SO (sobrevive a las actualizaciones)"""
+  if sys.platform == "win32":
+    base = Path(os.environ.get("APPDATA", Path.home() / "AppData" / "Roaming"))
+    return base / "MSSync"
+  base = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
+  return base / "mssync"
+
+ARCHIVO_CONFIG = obtener_directorio_config() / "config.json"
+# Ubicación usada por versiones anteriores (junto al script o en _internal si está compilado)
+ARCHIVO_CONFIG_ANTIGUO = DIRECTORIO_SCRIPT / "config.json"
+
+# Cerrojo para que la ventana y el hilo de sincronización no escriban a la vez
+_cerrojo_config = threading.RLock()
+_config_corrupta = False
 
 # Variable global para el idioma por defecto
 idioma_actual = "en"
@@ -159,25 +210,80 @@ def t(clave):
   """Función que devuelve el texto traducido"""
   return TEXTOS.get(idioma_actual, TEXTOS["en"]).get(clave, clave)
 
+def migrar_config_antigua():
+  """Copia el config.json de la ubicación antigua a la nueva si todavía no existe"""
+  if ARCHIVO_CONFIG.exists() or not ARCHIVO_CONFIG_ANTIGUO.exists():
+    return
+  try:
+    ARCHIVO_CONFIG.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(ARCHIVO_CONFIG_ANTIGUO, ARCHIVO_CONFIG)
+  except OSError:
+    pass
+
+def leer_config():
+  """Lee config.json. Si está corrupto lo aparta y devuelve una configuración vacía"""
+  global _config_corrupta
+  with _cerrojo_config:
+    migrar_config_antigua()
+    if not ARCHIVO_CONFIG.exists():
+      return {}
+    try:
+      with open(ARCHIVO_CONFIG, "r", encoding="utf-8") as archivo:
+        datos = json.load(archivo)
+      return datos if isinstance(datos, dict) else {}
+    except (json.JSONDecodeError, UnicodeDecodeError):
+      # Guardamos el archivo dañado para no perderlo y seguimos con uno vacío
+      try:
+        os.replace(ARCHIVO_CONFIG, ARCHIVO_CONFIG.with_name("config.json.corrupto"))
+      except OSError:
+        pass
+      _config_corrupta = True
+      return {}
+
+def guardar_config(datos):
+  """Guarda config.json de forma atómica (archivo local, no afecta a la nube)"""
+  with _cerrojo_config:
+    ARCHIVO_CONFIG.parent.mkdir(parents=True, exist_ok=True)
+    ruta_temporal = ARCHIVO_CONFIG.with_name("config.json.tmp")
+    with open(ruta_temporal, "w", encoding="utf-8") as archivo:
+      json.dump(datos, archivo, indent=2)
+      archivo.flush()
+      os.fsync(archivo.fileno())
+    os.replace(ruta_temporal, ARCHIVO_CONFIG)
+
+def actualizar_config(clave, valor):
+  """Relee la configuración, cambia solo una clave y la guarda"""
+  with _cerrojo_config:
+    datos = leer_config()
+    datos[clave] = valor
+    guardar_config(datos)
+
+def actualizar_estado_mundo(mundo, tiempo_local, tiempo_nube):
+  """Guarda las fechas de la última sincronización de un mundo sin tocar el resto de la configuración"""
+  with _cerrojo_config:
+    datos = leer_config()
+    if "estado_sync" not in datos:
+      datos["estado_sync"] = {}
+    datos["estado_sync"][mundo] = {
+      "local": int(tiempo_local),
+      "nube": int(tiempo_nube)
+    }
+    guardar_config(datos)
+
+def hubo_config_corrupta():
+  """Indica si al arrancar se encontró un config.json corrupto"""
+  return _config_corrupta
+
 def pre_cargar_idioma():
   """Carga el idioma antes de configurar argparse para traducir el menú de ayuda"""
   global idioma_actual
-  if ARCHIVO_CONFIG.exists():
-    try:
-      with open(ARCHIVO_CONFIG, "r") as archivo:
-        datos = json.load(archivo)
-        if "idioma" in datos:
-          idioma_actual = datos["idioma"]
-    except json.JSONDecodeError:
-      pass
+  datos = leer_config()
+  if datos.get("idioma") in TEXTOS:
+    idioma_actual = datos["idioma"]
 
 def cargar_configuracion():
   """Carga la configuración del programa desde el archivo config.json"""
-  try:
-    with open(ARCHIVO_CONFIG, "r") as archivo:
-      datos = json.load(archivo)
-  except FileNotFoundError:
-    return None
+  datos = leer_config()
   
   if "ruta_local" not in datos or "ruta_nube" not in datos:
     return None

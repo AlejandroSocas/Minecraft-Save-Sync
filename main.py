@@ -5,7 +5,6 @@ from sync_core import *
 from gui import *
 
 def main():
-  global idioma_actual
 
   # Cargamos el idioma configurado
   pre_cargar_idioma()
@@ -22,20 +21,18 @@ def main():
   parser.add_argument("-t", "--tray", action="store_true", help=t("help_tray"))
   parser.add_argument("-d", "--delay", action="store_true", help=t("help_delay"))
   parser.add_argument("-i", "--interval", type=int, default=30, help=t("help_interval"))
+  parser.add_argument("-b", "--block-autosync", action="store_true", help=t("help_block"))
   
   args = parser.parse_args()
 
   # Leemos la configuración para procesar argumentos de configuración antes de sincronizar
-  datos = {}
-  if ARCHIVO_CONFIG.exists():
-    with open(ARCHIVO_CONFIG, "r") as archivo:
-      datos = json.load(archivo)
+  datos = leer_config()
   
   guardar_json_main = False
 
   # Cambiamos el idioma
   if args.lang:
-    idioma_actual = args.lang
+    establecer_idioma(args.lang)
     datos["idioma"] = args.lang
     print(t("saving_lang").format(args.lang))
     guardar_json_main = True
@@ -79,8 +76,7 @@ def main():
   
   # Guardamos la configuración antes de iniciar el tray/sync
   if guardar_json_main:
-    with open(ARCHIVO_CONFIG, "w") as archivo:
-      json.dump(datos, archivo, indent=2)
+    guardar_config(datos)
   
   # Arrancamos la GUI
   app = QApplication(sys.argv)
@@ -101,7 +97,7 @@ def main():
     # Si el usuario ejecutó "python mssync.py sync" desde la terminal,
     # abrimos la ventana e iniciamos la sincronización automáticamente.
     if args.comando == "sync" or args.dry_run:
-      ventana.start_sync()
+      ventana.empezar_sincronizacion()
   
   # Iniciamos el bucle de eventos de Qt
   sys.exit(app.exec())

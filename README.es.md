@@ -10,7 +10,10 @@ Comprime automáticamente cada mundo en archivos `.zip` en la nube para optimiza
 
 ## Advertencia y Uso Obligatorio de la Nube
 > [!IMPORTANT]
-> **Antes de ejecutar o programar el sincronizador**, es obligatorio que tu cliente de la nube (Google Drive, rclone, OneDrive, etc.) haya terminado de actualizar la carpeta virtual en tu equipo. Si la carpeta de la nube local no está sincronizada con el servidor, esta herramienta no detectará los cambios recientes y no podrá descargar la última versión de tus mundos.
+> **Antes de ejecutar o programar el sincronizador**, es obligatorio que tu cliente de la nube (OneDrive, Google Drive, rclone, etc.) haya terminado de actualizar la carpeta virtual en tu equipo. Si la carpeta de la nube local no está sincronizada con el servidor, esta herramienta no detectará los cambios recientes y no podrá descargar la última versión de tus mundos.
+
+> [!TIP]
+> **Recomendación sobre clientes de nube:** Se recomienda encarecidamente utilizar **OneDrive** para la sincronización. El cliente de escritorio de Google Drive es notablemente más lento procesando los cambios locales y tiende a dar más problemas de retrasos o archivos bloqueados.
 
 Este script utiliza operaciones de compresión, sobrescritura y borrado. Aunque cuenta con validaciones de seguridad, se recomienda encarecidamente **hacer una copia de seguridad manual** de tus mundos antes de usar la herramienta por primera vez, para evitar pérdidas de progreso en caso de configurar las rutas incorrectamente.
 
@@ -23,6 +26,14 @@ La forma más rápida y sencilla de usar el programa sin necesidad de instalar P
 3. Descomprímelo en la carpeta donde desees guardar el programa.
 4. Haz doble clic en el ejecutable y la aplicación arrancará inmediatamente.
 
+### Comandos útiles para autostart en GUI
+```text
+  -t, --tray              Inicia el programa en la bandeja del sistema
+  -d, --delay             Retrasa el inicio 5 minutos
+  -i, --interval INTERVAL Minutos entre cada sincronización automática
+  -b, --block-autosync    Inicia el programa en la bandeja del sistema
+```
+
 ---
 
 ## Ejecución desde el Código Fuente (Para desarrolladores)
@@ -31,7 +42,7 @@ Si prefieres ejecutar el script directamente desde Python, sigue estos pasos:
 
 ### Prerrequisitos
 * Python 3.8 o superior.
-* **Tener tu servicio de nube instalado localmente** (ej. la aplicación de escritorio de Google Drive, OneDrive, Dropbox, etc.).
+* **Tener tu servicio de nube instalado localmente** (ej. la aplicación de escritorio de OneDrive, Google Drive, Dropbox, etc.).
 * **Dependencias de Python:** Instala las librerías necesarias ejecutando:
   ```bash
   pip install psutil PySide6
@@ -117,6 +128,7 @@ options:
   -d, --delay           Retrasa el inicio 5 minutos
   -i, --interval INTERVAL
                         Minutos entre cada sincronización automática (por defecto: 30)
+  -b, --block-autosync  Bloquea la función de autosincronización
 ```
 
 ### Ejemplos de comandos útiles
@@ -144,8 +156,15 @@ Puedes cambiar la interfaz al español permanentemente con un solo comando:
 python main.py -l es
 ```
 
+## Comportamientos Importantes a Tener en Cuenta
+* **Ubicación de la Configuración:** El archivo de ajustes (`config.json`) se guarda en `%APPDATA%\MSSync` (Windows) o `~/.config/mssync` (Linux). Esto asegura que tu configuración sobreviva al actualizar el ejecutable.
+* **Borrado de Mundos:** Borrar un mundo local **no** lo borrará de la nube. La nube actúa como una copia de seguridad eterna. Si deseas eliminar un mundo permanentemente, debes borrarlo tanto en local como en la carpeta de la nube.
+* **Conflictos:** Si un mundo ha sido modificado tanto en local como en la nube desde la última sincronización, se produce un conflicto. El mundo local se renombrará a `TuMundo_Conflicto_TIMESTAMP` (se mantendrá en local como copia de seguridad, visible en Minecraft, pero excluido de la sincronización) y se descargará la versión de la nube.
+
 ## Mecanismos de Seguridad Incluidos
 * **Detección de Minecraft:** El programa utiliza `psutil` para detectar si el juego está abierto y pausa las sincronizaciones automáticas para evitar corromper los archivos de guardado en uso.
-* **Escritura Atómica:** Los mundos se comprimen primero en archivos temporales y solo se reemplazan cuando la compresión finaliza con éxito, protegiendo tus datos contra apagones repentinos o cierres forzados.
+* **Escritura Atómica:** 
+  * *Subidas:* Los mundos se comprimen directamente en la carpeta de la nube para evitar problemas de reemplazo atómico con las unidades virtuales.
+  * *Descargas:* El zip de la nube se copia secuencialmente a local, se extrae en una carpeta temporal segura (`_extraccion_mssync`), y solo reemplaza la carpeta real del mundo cuando la extracción ha finalizado por completo.
 * **Validación de Integridad:** Antes de sobrescribir tu mundo local, se verifica internamente que el archivo `.zip` de la nube esté completo y contenga los archivos base del juego (`level.dat`), evitando machacar tu mundo con descargas corruptas.
 * **Sistema Lock:** Emplea un archivo de bloqueo (`mssync.lock`) en la nube para impedir colisiones catastróficas si dos ordenadores intentan sincronizar modificaciones exactamente al mismo tiempo.
