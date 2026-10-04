@@ -8,6 +8,8 @@ A bilingual (English/Spanish) Python desktop application and script that synchro
 
 It automatically compresses each world into `.zip` files in the cloud to optimize upload/download speeds. Additionally, it features advanced security mechanisms: atomic writes, ZIP integrity validation, and a lock system to prevent corruption if synchronization is attempted from multiple PCs simultaneously. Compatible with Windows and Linux.
 
+<img src="https://i.ibb.co/4ZDyXPhb/imagen.png" width="500">
+
 ## Warning and Mandatory Cloud Usage
 > [!IMPORTANT]
 > **Before running or scheduling the synchronizer**, it is mandatory that your cloud client (OneDrive, Google Drive, rclone, etc.) has finished updating the virtual folder on your computer. If the local cloud folder is not synchronized with the server, this tool will not detect recent changes and will fail to download the latest version of your worlds.
@@ -29,7 +31,7 @@ The fastest and easiest way to use the program without needing to install Python
 ### Useful commands for autostart in GUI
 ```text
   -t, --tray                Starts the program directly hidden in the system tray
-  -d, --delay               Delays the start by 5 minutes
+  -d, --delay               Delays the start by 5 minutes (Highly recommended for auto-start)
   -i, --interval INTERVAL   Minutes between each automatic synchronization (default: 30)
   -b, --block-autosync      Blocks the autosync function
 ```
@@ -165,6 +167,6 @@ python main.py -l es
 * **Minecraft Detection:** The program uses `psutil` to detect if the game is open and pauses automatic synchronizations to avoid corrupting save files in use.
 * **Atomic Writes:** 
   * *Uploads:* Worlds are directly compressed into the cloud folder to avoid atomic replace issues with virtual drives.
-  * *Downloads:* The cloud zip is sequentially copied locally, extracted into a safe temporary folder (`_extraccion_mssync`), and only replaces the real world folder when the extraction is fully complete.
+  * *Downloads:* The cloud zip is sequentially copied locally, extracted into a safe temporary folder (`__mssync_extraccion`), and only replaces the real world folder when the extraction is fully complete.
 * **Integrity Validation:** Before overwriting your local world, it internally verifies that the cloud `.zip` file is complete and contains the base game files (`level.dat`), preventing your world from being overwritten with corrupt downloads.
 * **Lock System:** Uses a lock file (`mssync.lock`) in the cloud to prevent catastrophic collisions if two computers attempt to synchronize modifications at the exact same time.

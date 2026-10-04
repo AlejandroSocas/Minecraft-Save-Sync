@@ -1,6 +1,6 @@
-from PySide6.QtWidgets import QMainWindow, QApplication, QSystemTrayIcon, QMenu, QLineEdit
+from PySide6.QtWidgets import QMainWindow, QApplication, QSystemTrayIcon, QMenu
 from PySide6.QtGui import QIcon, QAction
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import QTimer, QTime
 from ui_ventana import Ui_MainWindow
 
 from sync_core import *
@@ -17,6 +17,7 @@ class Ventana(QMainWindow):
 
     # Hacemos la consola solo se pueda leer
     self.ui.consola.setReadOnly(True)
+    self.ui.timeEdit.setReadOnly(True)
 
     # Estado interno de la sincronización y del cierre
     self.worker = None
@@ -68,22 +69,68 @@ class Ventana(QMainWindow):
     if self.args.dry_run:
       self.actualizar_consola(t("dry_mode_active"))
 
-    self.timer_sync = QTimer(self)
-    self.timer_sync.timeout.connect(self.empezar_sincronizacion)
+    self.timer_tick = QTimer(self)
+    self.timer_tick.setInterval(1000)
+    self.timer_tick.timeout.connect(self.actualizar_contador_ui)
+
+    self.segundos_restantes = 0
+    
+    # Validamos el intervalo aquí para poder imprimir los errores en la consola visual
+    if self.args.interval:
+      try:
+        self.args.interval = int(self.args.interval)
+        if self.args.interval <= 0:
+          self.actualizar_consola(t("interval_range_error").format(self.args.interval))
+          self.args.interval = 30
+      except ValueError:
+        self.actualizar_consola(t("interval_int_error").format(self.args.interval))
+        self.args.interval = 30
 
     if not self.args.block_autosync:
       if self.args.delay:
-        # Si hay delay, esperamos 5 minutos, sincronizamos y LUEGO arrancamos el bucle periódico
+        # Si hay delay, empezamos la cuenta regresiva de 5 minutos
         self.actualizar_consola(t("delay_start"))
-        QTimer.singleShot(5 * 60 * 1000, self._iniciar_ciclo_automatico)
+        self.iniciar_cuenta_regresiva(5 * 60, self.iniciar_ciclo_automatico)
       else:
-        # Sin delay, sincronizamos nada más arrancar el bucle de eventos y luego periódicamente
-        QTimer.singleShot(0, self._iniciar_ciclo_automatico)
+        # Sin delay, iniciamos el ciclo inmediatamente (hará una sync y pondrá el contador a X minutos)
+        self.iniciar_ciclo_automatico()
     else:
       self.actualizar_consola(t("block_autosync"))
+      
+    # Si el autoarranque ya estaba activado, lo regeneramos para que apunte a la ruta de este ejecutable nuevo
+    if autoarranque_activado():
+      if alternar_autoarranque(True) == False:
+        self.actualizar_consola(t("autostart_error"))
 
     # Forzamos la traducción de la interfaz al terminar de cargar todo
     self.traducir_interfaz()
+
+  def iniciar_cuenta_regresiva(self, segundos, callback_al_terminar):
+    """Configura los segundos restantes y la acción a ejecutar al llegar a 0."""
+    self.segundos_restantes = segundos
+    self.mostrar_tiempo(self.segundos_restantes)
+    self.callback_fin_tiempo = callback_al_terminar
+    self.timer_tick.start()
+
+  def actualizar_contador_ui(self):
+    """Se ejecuta cada 1 segundo para restar y pintar el nuevo valor."""
+    if self.segundos_restantes > 0:
+      self.segundos_restantes -= 1
+      self.mostrar_tiempo(self.segundos_restantes)
+
+    if self.segundos_restantes <= 0:
+      self.timer_tick.stop()
+      if hasattr(self, "callback_fin_tiempo") and self.callback_fin_tiempo:
+        cb = self.callback_fin_tiempo
+        self.callback_fin_tiempo = None
+        cb()
+
+  def mostrar_tiempo(self, total_segundos):
+    """Pinta los segundos en el widget (formato mm:ss)."""
+    minutos, segs = divmod(total_segundos, 60)
+    horas, minutos = divmod(minutos, 60)
+
+    self.ui.timeEdit.setTime(QTime(horas, minutos, segs))
 
   def cambiar_idioma(self, index):
     """Se ejecuta cada vez que el usuario cambia el valor del ComboBox"""
@@ -119,10 +166,11 @@ class Ventana(QMainWindow):
     self.accion_sync.setText(t("tray_sync"))
     self.accion_salir.setText(t("tray_exit"))
 
-  def _iniciar_ciclo_automatico(self):
+  def iniciar_ciclo_automatico(self):
     """Ejecuta la primera sincronización y arranca el ciclo regular"""
     self.empezar_sincronizacion()
-    self.timer_sync.start(self.args.interval * 60 * 1000)
+    segundos_ciclo = int(self.args.interval * 60)
+    self.iniciar_cuenta_regresiva(segundos_ciclo, self.iniciar_ciclo_automatico)
 
   def empezar_sincronizacion(self):
     """Lanza la sincronización en segundo plano"""
@@ -155,15 +203,21 @@ class Ventana(QMainWindow):
 
   def asignar_ruta_local(self):
     """Guarda la ruta local introducida en config.json"""
-    local_path = self.ui.local_path_line_edit.text()
-    self.actualizar_consola(t("saving_local").format(local_path))
-    actualizar_config("ruta_local", local_path)
+    local_path = validar_ruta(self.ui.local_path_line_edit.text())
+    if local_path:
+      self.actualizar_consola(t("saving_local").format(local_path))
+      actualizar_config("ruta_local", local_path)
+    else:
+      self.actualizar_consola(t("error_local"))
 
   def asignar_ruta_nube(self):
     """Guarda la ruta nube introducida en config.json"""
-    cloud_path = self.ui.cloud_path_line_edit.text()
-    self.actualizar_consola(t("saving_cloud").format(cloud_path))
-    actualizar_config("ruta_nube", cloud_path)
+    cloud_path = validar_ruta(self.ui.cloud_path_line_edit.text())
+    if cloud_path:
+      self.actualizar_consola(t("saving_cloud").format(cloud_path))
+      actualizar_config("ruta_nube", cloud_path)
+    else:
+      self.actualizar_consola(t("error_cloud"))
 
   def asignar_parametros_autoarranque(self):
     """Guarda los parámetros de autoarranque establecidos en config.json"""
@@ -171,16 +225,22 @@ class Ventana(QMainWindow):
     self.actualizar_consola(t("saving_start_parameters").format(parametros_autoarranque))
     actualizar_config("parametros_autoarranque", parametros_autoarranque)
     if autoarranque_activado():
-      alternar_autoarranque(True)
-      self.actualizar_consola(t("auto_updated"))
+      if alternar_autoarranque(True) == False:
+         self.actualizar_consola(t("autostart_error"))
+      else:
+        self.actualizar_consola(t("auto_updated"))
+
 
   def cambiar_autoarranque(self, activado):
     """Cambia el autoarranque a activado o desactivado"""
-    # activado es True si se acaba de marcar, False si se desmarcó
-    alternar_autoarranque(activado)
     if activado:
-      self.actualizar_consola(t("auto_enabled"))
+      if alternar_autoarranque(True):
+        self.actualizar_consola(t("auto_enabled"))
+      else:
+        self.actualizar_consola(t("autostart_error"))
+        self.ui.autostart_checkbox.setChecked(False) # Desmarcamos la casilla visualmente porque falló
     else:
+      alternar_autoarranque(False)
       self.actualizar_consola(t("auto_disabled"))
 
   def configurar_tray(self):
@@ -249,6 +309,7 @@ class Ventana(QMainWindow):
       # El QApplication.quit() se llamará en sincronizacion_finalizada
     else:
       QApplication.instance().quit()
+
 
   def closeEvent(self, event):
     # Ignoramos la orden de destrucción

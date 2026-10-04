@@ -4,6 +4,7 @@ import sys
 from sync_core import *
 from gui import *
 
+
 def main():
 
   # Cargamos el idioma configurado
@@ -20,7 +21,7 @@ def main():
   parser.add_argument("-l", "--lang", choices=["en", "es"], help=t("help_lang"))
   parser.add_argument("-t", "--tray", action="store_true", help=t("help_tray"))
   parser.add_argument("-d", "--delay", action="store_true", help=t("help_delay"))
-  parser.add_argument("-i", "--interval", type=int, default=30, help=t("help_interval"))
+  parser.add_argument("-i", "--interval", default=30, help=t("help_interval"))
   parser.add_argument("-b", "--block-autosync", action="store_true", help=t("help_block"))
   
   args = parser.parse_args()
@@ -64,15 +65,23 @@ def main():
 
   # Establecemos la ruta local de los mundos
   if args.setlocalp:
-    print(t("saving_local").format(args.setlocalp))
-    datos["ruta_local"] = args.setlocalp
-    guardar_json_main = True
+    ruta = validar_ruta(args.setlocalp)
+    if ruta:
+      print(t("saving_local").format(ruta))
+      datos["ruta_local"] = ruta
+      guardar_json_main = True
+    else:
+      print(t("error_local"))
 
   # Establecemos la ruta de la nube de los mundos
   if args.setcloudp:
-    print(t("saving_cloud").format(args.setcloudp))
-    datos["ruta_nube"] = args.setcloudp
-    guardar_json_main = True
+    ruta = validar_ruta(args.setcloudp)
+    if ruta:
+      print(t("saving_cloud").format(ruta))
+      datos["ruta_nube"] = ruta
+      guardar_json_main = True
+    else:
+      print(t("error_cloud"))
   
   # Guardamos la configuración antes de iniciar el tray/sync
   if guardar_json_main:

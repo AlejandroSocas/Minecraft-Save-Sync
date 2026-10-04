@@ -93,7 +93,12 @@ TEXTOS = {
     "mc_opened_abort": "Minecraft has been opened during the synchronization. The remaining worlds have been skipped.",
     "dry_mode_active": "Simulation mode (-dr) active: no files will be modified.",
     "auto_updated": "Autostart file updated with the new parameters.",
-    "extract_no_level": "the extracted world does not contain level.dat"
+    "extract_no_level": "the extracted world does not contain level.dat",
+    "interval_int_error": "-i '{}' must be an integer.",
+    "interval_range_error": "-i '{} must be greater than 0.",
+    "autostart_error": "Error applying autostart.",
+    "error_local": "The local route cannot be empty.",
+    "error_cloud": "The cloud route cannot be empty."
   },
   "es": {
     "config_not_found": "No se ha encontrado el archivo de configuración",
@@ -181,7 +186,12 @@ TEXTOS = {
     "mc_opened_abort": "Minecraft se ha abierto durante la sincronización. Se han omitido los mundos restantes.",
     "dry_mode_active": "Modo simulación (-dr) activo: no se modificará ningún archivo.",
     "auto_updated": "Archivo de autoarranque actualizado con los nuevos parámetros.",
-    "extract_no_level": "el mundo extraído no contiene level.dat"
+    "extract_no_level": "el mundo extraído no contiene level.dat",
+    "interval_int_error": "-i '{}' debe de ser un número entero.",
+    "interval_range_error": "-i '{} debe de ser mayor que 0.",
+    "autostart_error": "Error al aplicar el autoarranque.",
+    "error_local": "La ruta local no puede estar vacia.",
+    "error_cloud": "la ruta de la nube no puede estar vacia."
   }
 }
 
@@ -274,6 +284,21 @@ def hubo_config_corrupta():
   """Indica si al arrancar se encontró un config.json corrupto"""
   return _config_corrupta
 
+def validar_ruta(ruta_texto):
+  """
+  Limpia la ruta y comprueba si es un texto válido y si la carpeta existe.
+  Devuelve la ruta limpia si es válida, o None si hay algún problema.
+  """
+  ruta_limpia = ruta_texto.strip() # Quitamos espacios al principio y al final
+  if not ruta_limpia:
+    return None
+    
+  ruta_obj = Path(ruta_limpia)
+  if not ruta_obj.exists() or not ruta_obj.is_dir():
+    return None
+    
+  return ruta_limpia
+
 def pre_cargar_idioma():
   """Carga el idioma antes de configurar argparse para traducir el menú de ayuda"""
   global idioma_actual
@@ -286,6 +311,17 @@ def cargar_configuracion():
   datos = leer_config()
   
   if "ruta_local" not in datos or "ruta_nube" not in datos:
+    return None
+
+  ruta_local = validar_ruta(datos["ruta_local"])
+  ruta_nube = validar_ruta(datos["ruta_nube"])
+
+  # Si alguna de las rutas no es válida o no existe, abortamos la carga
+  if not ruta_local or not ruta_nube:
+    return None
+
+  # Además comprobamos que no pongan la misma carpeta en local y nube
+  if Path(ruta_local).resolve() == Path(ruta_nube).resolve():
     return None
 
   config = {

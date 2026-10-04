@@ -8,6 +8,8 @@ Aplicación de escritorio y script de Python bilingüe (Inglés/Español) que se
 
 Comprime automáticamente cada mundo en archivos `.zip` en la nube para optimizar la velocidad de subida/bajada. Además, cuenta con mecanismos avanzados de seguridad: escritura atómica, validación de integridad de los ZIP y un sistema de bloqueo (*lock*) para evitar corrupciones si se intenta sincronizar desde varios PCs simultáneamente. Compatible con Windows y Linux.
 
+<img src="https://i.ibb.co/zWWr42PY/imagen.png" width="500">
+
 ## Advertencia y Uso Obligatorio de la Nube
 > [!IMPORTANT]
 > **Antes de ejecutar o programar el sincronizador**, es obligatorio que tu cliente de la nube (OneDrive, Google Drive, rclone, etc.) haya terminado de actualizar la carpeta virtual en tu equipo. Si la carpeta de la nube local no está sincronizada con el servidor, esta herramienta no detectará los cambios recientes y no podrá descargar la última versión de tus mundos.
@@ -29,9 +31,9 @@ La forma más rápida y sencilla de usar el programa sin necesidad de instalar P
 ### Comandos útiles para autostart en GUI
 ```text
   -t, --tray              Inicia el programa en la bandeja del sistema
-  -d, --delay             Retrasa el inicio 5 minutos
+  -d, --delay             Retrasa el inicio 5 minutos (Muy recomedable para autoarranque)
   -i, --interval INTERVAL Minutos entre cada sincronización automática
-  -b, --block-autosync    Inicia el programa en la bandeja del sistema
+  -b, --block-autosync    Bloquea la función de autosincronización
 ```
 
 ---
@@ -165,6 +167,6 @@ python main.py -l es
 * **Detección de Minecraft:** El programa utiliza `psutil` para detectar si el juego está abierto y pausa las sincronizaciones automáticas para evitar corromper los archivos de guardado en uso.
 * **Escritura Atómica:** 
   * *Subidas:* Los mundos se comprimen directamente en la carpeta de la nube para evitar problemas de reemplazo atómico con las unidades virtuales.
-  * *Descargas:* El zip de la nube se copia secuencialmente a local, se extrae en una carpeta temporal segura (`_extraccion_mssync`), y solo reemplaza la carpeta real del mundo cuando la extracción ha finalizado por completo.
+  * *Descargas:* El zip de la nube se copia secuencialmente a local, se extrae en una carpeta temporal segura (`__mssync_extraccion`), y solo reemplaza la carpeta real del mundo cuando la extracción ha finalizado por completo.
 * **Validación de Integridad:** Antes de sobrescribir tu mundo local, se verifica internamente que el archivo `.zip` de la nube esté completo y contenga los archivos base del juego (`level.dat`), evitando machacar tu mundo con descargas corruptas.
 * **Sistema Lock:** Emplea un archivo de bloqueo (`mssync.lock`) en la nube para impedir colisiones catastróficas si dos ordenadores intentan sincronizar modificaciones exactamente al mismo tiempo.
